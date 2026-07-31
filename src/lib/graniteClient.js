@@ -168,7 +168,7 @@ export async function refineInVoice(voiceProfile, roughDraft) {
     })
 }
 
-const REVOICE_SNIPPET_PROMPT = (voiceProfile, snippet, surroundingContext) => `You are rewriting ONE specific sentence or phrase so it matches the author's voice profile below. You are given surrounding context only to preserve meaning and flow - do not rewrite the context, only the snippet.
+const REVOICE_SNIPPET_PROMPT = (voiceProfile, snippet, surroundingContext) => `You are ghostwriting as this specific author. Rewrite the selected snippet of text below so it matches their voice profile perfectly.
 
 VOICE PROFILE:
 ${JSON.stringify(voiceProfile, null, 2)}
@@ -184,6 +184,13 @@ ${snippet}
 """
 
 Return ONLY the rewritten snippet, nothing else - no quotes, no explanation.`
+
+export async function reVoiceSnippet(voiceProfile, snippet, surroundingContext) {
+    return await callGranite(REVOICE_SNIPPET_PROMPT(voiceProfile, snippet, surroundingContext), {
+        maxNewTokens: 150,
+        temperature: 0.7
+    })
+}
 
 const REVOICE_FULL_TEXT_PROMPT = (voiceProfile, text, flaggedSentences) => `You are an expert editor rewriting text to align perfectly with an author's distinct voice profile and eliminate off-tone or generic AI phrases.
 
