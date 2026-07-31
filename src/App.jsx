@@ -18,6 +18,7 @@ export default function App() {
     const [result, setResult] = useState(null)
     const [error, setError] = useState(null)
     const [showGenerator, setShowGenerator] = useState(false)
+    const [activeMode, setActiveMode] = useState('write')
     const [savedProfiles, setSavedProfiles] = useState([])
 
     useEffect(() => {
@@ -100,16 +101,43 @@ export default function App() {
 
                 {profile && showGenerator && (
                     <>
-                        <GenerationPanel
-                            onGenerate={handleGenerate}
-                            isGenerating={isGenerating}
-                            result={result}
-                            voiceProfile={profile}
-                            onResultChange={setResult}
-                            activeSample={activeSample}
-                        />
-                        <EmailReplier voiceProfile={profile} />
-                        <DriftEditor voiceProfile={profile} />
+                        <div className="mode-tab-bar">
+                            <button
+                                className={`mode-tab ${activeMode === 'write' ? 'active' : ''}`}
+                                onClick={() => setActiveMode('write')}
+                            >
+                                ✍️ General Writing
+                            </button>
+                            <button
+                                className={`mode-tab ${activeMode === 'email' ? 'active' : ''}`}
+                                onClick={() => setActiveMode('email')}
+                            >
+                                ✉️ Email Reply Generator
+                            </button>
+                            <button
+                                className={`mode-tab ${activeMode === 'drift' ? 'active' : ''}`}
+                                onClick={() => setActiveMode('drift')}
+                            >
+                                🔍 Voice Drift Detector
+                            </button>
+                        </div>
+
+                        {activeMode === 'write' && (
+                            <GenerationPanel
+                                onGenerate={handleGenerate}
+                                isGenerating={isGenerating}
+                                result={result}
+                                voiceProfile={profile}
+                                onResultChange={setResult}
+                                activeSample={activeSample}
+                            />
+                        )}
+                        {activeMode === 'email' && (
+                            <EmailReplier voiceProfile={profile} />
+                        )}
+                        {activeMode === 'drift' && (
+                            <DriftEditor voiceProfile={profile} />
+                        )}
                     </>
                 )}
 

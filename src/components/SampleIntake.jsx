@@ -29,6 +29,12 @@ export default function SampleIntake({ onAnalyze, isAnalyzing }) {
                 enough. PersonaCast reads for how you actually sound, not what you
                 wrote about.
             </p>
+            <div className="landing-capabilities">
+                <span className="cap-pill">✍️ Freeform Generation</span>
+                <span className="cap-pill">✉️ Email Reply Drafts</span>
+                <span className="cap-pill">🎭 Multi-Persona Blending</span>
+                <span className="cap-pill">🔍 Voice Drift Check</span>
+            </div>
 
             <div className="file-upload-row">
                 <label className="file-upload-btn">

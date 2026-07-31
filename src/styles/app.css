@@ -569,7 +569,6 @@ textarea:focus {
     color: var(--parchment-dim);
 }
 
-/* Word Count Slider Row */
 .word-count-row {
     display: flex;
     align-items: center;
@@ -584,42 +583,56 @@ textarea:focus {
     accent-color: var(--sage);
 }
 
-.facts-input {
-    margin: 0.5rem 0 0.75rem;
-    font-size: 0.78rem;
-}
-
-.facts-input summary {
-    cursor: pointer;
-    color: var(--indigo-bright);
-    margin-bottom: 0.5rem;
-}
-
-.facts-input textarea {
-    font-size: 0.8rem;
-    margin-bottom: 0.4rem;
-}
-
-/* Tone Selector Chips */
-.tone-selector {
+/* Landing Page Capability Badges */
+.landing-capabilities {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    margin-bottom: 1rem;
+    margin: 1.25rem 0 1.75rem;
 }
 
-.tone-chip {
+.cap-pill {
     background: var(--ink-soft);
     border: 1px solid var(--rule);
     color: var(--parchment-dim);
+    font-size: 0.76rem;
     padding: 0.35rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.78rem;
-    cursor: pointer;
+    border-radius: 100px;
+    letter-spacing: 0.01em;
 }
 
-.tone-chip.active {
+/* Mode Switcher Tabs */
+.mode-tab-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    background: var(--ink-card);
+    padding: 0.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--rule);
+}
+
+.mode-tab {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--parchment-dim);
+    padding: 0.55rem 1.1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mode-tab:hover {
+    color: var(--parchment);
+    background: var(--ink-soft);
+}
+
+.mode-tab.active {
     background: var(--indigo);
     color: var(--parchment);
     border-color: var(--indigo-bright);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
