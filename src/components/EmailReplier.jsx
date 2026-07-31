@@ -58,6 +58,51 @@ const PROVIDERS = [
     { id: 'custom', name: 'Custom Mail', logo: <CustomApiLogo /> }
 ]
 
+function cleanEmailBody(rawBody) {
+    if (!rawBody) return ''
+    let text = rawBody
+    text = text.replace(/<style[\s\S]*?<\/style>/gi, '')
+    text = text.replace(/<script[\s\S]*?<\/script>/gi, '')
+    text = text.replace(/([a-z0-9_#.-]+\s*\{[^}]*\})/gi, '')
+    text = text.replace(/<(br|p|div|tr|li)[^>]*>/gi, '\n')
+    text = text.replace(/<[^>]+>/g, '')
+    text = text
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'")
+        .replace(/&rsquo;/gi, "'")
+        .replace(/&lsquo;/gi, "'")
+        .replace(/&rdquo;/gi, '"')
+        .replace(/&ldquo;/gi, '"')
+        .replace(/&mdash;/gi, '—')
+        .replace(/&ndash;/gi, '–')
+
+    text = text.split('\n')
+        .filter((line) => {
+            const trimmed = line.trim()
+            if (trimmed.startsWith('Content-Type:') ||
+                trimmed.startsWith('Content-Transfer-Encoding:') ||
+                trimmed.startsWith('MIME-Version:') ||
+                trimmed.startsWith('----=_NextPart') ||
+                trimmed.startsWith('--_000_') ||
+                trimmed.startsWith('boundary=')) {
+                return false
+            }
+            return true
+        })
+        .join('\n')
+
+    return text
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l, idx, arr) => !(l === '' && arr[idx - 1] === ''))
+        .join('\n')
+        .trim()
+}
+
 function parseEml(rawText) {
     const lines = rawText.split(/\r?\n/)
     let subject = ''
@@ -78,9 +123,11 @@ function parseEml(rawText) {
         }
     }
 
-    const body = bodyStartIndex !== -1 && bodyStartIndex < lines.length
+    const rawBody = bodyStartIndex !== -1 && bodyStartIndex < lines.length
         ? lines.slice(bodyStartIndex).join('\n').trim()
         : rawText
+
+    const body = cleanEmailBody(rawBody)
 
     return { subject, from, body }
 }
