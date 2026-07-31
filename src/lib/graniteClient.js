@@ -185,9 +185,28 @@ ${snippet}
 
 Return ONLY the rewritten snippet, nothing else - no quotes, no explanation.`
 
-export async function reVoiceSnippet(voiceProfile, snippet, surroundingContext) {
-    return await callGranite(REVOICE_SNIPPET_PROMPT(voiceProfile, snippet, surroundingContext), {
-        maxNewTokens: 150,
+const REVOICE_FULL_TEXT_PROMPT = (voiceProfile, text, flaggedSentences) => `You are an expert editor rewriting text to align perfectly with an author's distinct voice profile and eliminate off-tone or generic AI phrases.
+
+VOICE PROFILE:
+${JSON.stringify(voiceProfile, null, 2)}
+
+FLAGGED OFF-TONE SENTENCES TO FIX:
+${JSON.stringify(flaggedSentences, null, 2)}
+
+ORIGINAL DRAFT TEXT:
+"""
+${text}
+"""
+
+STRICT RULES:
+- Rewrite the text so that all generic AI filler and off-tone phrasing are eliminated.
+- Match the author's sentence rhythm, tone, and vocabulary habits throughout.
+- Keep the original core meaning and factual details intact.
+- Return ONLY the final polished rewritten text - no explanations or preamble.`
+
+export async function reVoiceFullText(voiceProfile, text, flaggedSentences = []) {
+    return await callGranite(REVOICE_FULL_TEXT_PROMPT(voiceProfile, text, flaggedSentences), {
+        maxNewTokens: 600,
         temperature: 0.7
     })
 }

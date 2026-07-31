@@ -1149,3 +1149,34 @@ textarea:focus {
     background: var(--indigo);
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
+
+/* Drift Auto-Rewrite Styles */
+.drift-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 0.75rem;
+}
+
+.rewrite-btn {
+    background: rgba(142, 168, 128, 0.15);
+    border: 1px solid var(--sage);
+    color: var(--parchment);
+    font-size: 0.85rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rewrite-btn:hover {
+    background: var(--sage);
+    color: var(--ink);
+    box-shadow: 0 4px 14px rgba(142, 168, 128, 0.3);
+}
+
+.rewritten-card {
+    margin-top: 1.25rem;
+    border-color: var(--sage);
+}

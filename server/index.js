@@ -54,6 +54,23 @@ function processGranitePromptFallback(promptStr) {
     const factsMatch = promptStr.match(/REAL FACTS\/DATA TO USE[^\n]*:\s*"""([\s\S]*?)"""/i) || promptStr.match(/REAL FACTS\/DATA TO USE[^\n]*:\s*([\s\S]*?)(?=\n[A-Z_\s]+:|$)/i)
     const factsText = factsMatch ? factsMatch[1].trim() : ''
 
+    // Extract revoice full text draft if present
+    const origDraftMatch = promptStr.match(/ORIGINAL DRAFT TEXT:\s*["']{0,3}([\s\S]*?)["']{0,3}(?=\n[A-Z_\s]+:|$)/i)
+    if (origDraftMatch && origDraftMatch[1].trim()) {
+        const draftText = origDraftMatch[1].trim()
+        let cleanedText = draftText
+            .replace(/in conclusion,?\s*/gi, '')
+            .replace(/it is important to note that\s*/gi, '')
+            .replace(/delve into\s*/gi, 'examine ')
+            .replace(/a testament to\s*/gi, 'proof of ')
+            .replace(/moreover,?\s*/gi, '')
+            .replace(/furthermore,?\s*/gi, '')
+            .replace(/in today's fast-paced world,?\s*/gi, '')
+            .replace(/I hope this email finds you well,?\s*/gi, '')
+            .replace(/^"|"$/g, '')
+        return cleanedText
+    }
+
     // Extract Reply Intent if email
     const intentMatch = promptStr.match(/WHAT THE REPLY SHOULD SAY[^\n]*:\s*([\s\S]*?)(?=\n[A-Z_\s]+:|$)/i) || promptStr.match(/REPLY INTENT:\s*([\s\S]*?)(?=\n[A-Z_\s]+:|$)/i)
     const intent = intentMatch ? intentMatch[1].trim() : ''
