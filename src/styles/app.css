@@ -636,3 +636,64 @@ textarea:focus {
     border-color: var(--indigo-bright);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
+
+/* Auto-Fetch Subject Input & Chips */
+.subject-input {
+    width: 100%;
+    background: var(--ink-soft);
+    border: 1px solid var(--rule);
+    color: var(--parchment);
+    font-size: 0.9rem;
+    padding: 0.85rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+}
+
+.preset-subjects {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.preset-label {
+    font-size: 0.75rem;
+    color: var(--parchment-dim);
+}
+
+.preset-chip {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--rule);
+    color: var(--parchment-dim);
+    padding: 0.3rem 0.65rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.preset-chip:hover, .preset-chip.active {
+    border-color: var(--indigo-bright);
+    color: var(--parchment);
+    background: var(--ink-soft);
+}
+
+.fetch-status {
+    font-size: 0.78rem;
+    margin-bottom: 0.85rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.fetch-status.success {
+    color: var(--sage);
+    background: rgba(142, 168, 128, 0.1);
+    border: 1px solid rgba(142, 168, 128, 0.25);
+}
+
+.fetch-status.loading {
+    color: var(--indigo-bright);
+    background: rgba(120, 119, 198, 0.1);
+}

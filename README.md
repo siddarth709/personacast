@@ -70,7 +70,7 @@ personacast/
 │   │   ├── PersonaBlender.jsx   # weighted multi-voice blending
 │   │   ├── GenerationPanel.jsx  # generate with length + facts controls
 │   │   ├── InlineReVoicer.jsx   # highlight-to-rewrite in editor
-│   │   ├── EmailReplier.jsx     # tone-controlled email reply drafting
+│   │   ├── EmailReplier.jsx     # auto-fetch by subject + tone-controlled email reply drafting
 │   │   └── DriftEditor.jsx      # generic-phrase + tone drift detection
 │   ├── lib/
 │   │   ├── graniteClient.js     # all Granite/watsonx.ai calls + prompts
