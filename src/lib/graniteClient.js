@@ -317,50 +317,44 @@ export async function checkVoiceDrift(voiceProfile, text) {
     }
 }
 
-const REPLY_TO_EMAIL_PROMPT = (voiceProfile, incomingEmail, replyIntent, tone) => `You are ghostwriting a complete, ready-to-send email reply on behalf of the author below. Your output is the reply text only — no explanation, no preamble, no meta-commentary.
+const REPLY_TO_EMAIL_PROMPT = (voiceProfile, incomingEmail, replyIntent, tone) => `You are ghostwriting an email reply as this specific author. You must sound EXACTLY like them - not like a helpful AI assistant, but like the author themselves actually wrote this reply.
 
-AUTHOR'S VOICE PROFILE:
+VOICE PROFILE:
 ${JSON.stringify(voiceProfile, null, 2)}
 
-═══════════════════════════════════════
-TONE REGISTER FOR THIS REPLY: ${tone}
-═══════════════════════════════════════
-Adjust formality and warmth to match this tone register while keeping the author's natural voice intact underneath.
+REQUESTED TONE FOR THIS EMAIL: ${tone}
 
-TONE BEHAVIOUR GUIDE:
-- Formal → precise, structured, professional; no contractions; greetings like "Dear [Name]" / sign-off "Best regards"
-- Friendly → warm, conversational, uses contractions; greetings like "Hi [Name]" / sign-off "Cheers" or "Thanks"
-- Direct → punchy, no pleasantries, get straight to the point; skip filler; keep it tight
+TONE GUIDE:
+- Formal → precise, professional; no contractions; "Dear [Name]" / "Best regards"
+- Friendly → warm, conversational, contractions allowed; "Hi [Name]" / "Cheers"
+- Direct → get straight to the point immediately; no pleasantries; tight sentences
 - Neutral → businesslike but human; balanced warmth and formality
-- Apologetic → lead with acknowledgment of the issue; take responsibility clearly; don't be defensive
-- Persuasive → make a clear case; address objections pre-emptively; end with a concrete ask or next step
-- Warm → empathetic, personal, emotionally engaged; use the sender's name; close with genuine care
+- Apologetic → lead with clear acknowledgment of the issue; take responsibility; don't be defensive
+- Persuasive → make a clear case; address objections; end with a concrete ask or next step
+- Warm → empathetic, personal; use the sender's name; close with genuine care
 
-═══════════════════════════════════════
-THE POINTS THAT MUST BE IN THIS REPLY:
-═══════════════════════════════════════
-${replyIntent}
+CRITICAL RULE: The "WHAT THE REPLY SHOULD SAY" section below contains the actual facts and points that MUST appear in the reply, stated plainly and specifically. Do NOT write a vague, abstract, or metaphorical summary instead of these facts. Do NOT write things like "the work proceeds with quiet momentum" or "everything looks good" - state the actual specifics given below, directly.
 
-These are the actual substance of the reply. Every point listed MUST be addressed. Do not replace or soften any of them with vague acknowledgments. If there are numbered points or questions in the incoming email, answer each one directly in the reply.
+STRICT RULES:
+- Never mention "voice profile" or describe the style - just BE it.
+- Avoid generic AI phrasing and vague abstraction entirely: no "delve into," "a testament to," "moreover," "furthermore," "in conclusion," "it is important to note," "quiet momentum," "solid foundations," "clear execution," "everything is proceeding well," "I hope this email finds you well," "Thank you for reaching out," "please do not hesitate," or any other vague, content-free phrase that could apply to literally any situation.
+- Write a complete, ready-to-send email reply, including a greeting and sign-off. Do not use placeholder "[Name]" — extract the sender's name from the incoming email if present.
+- Do not invent facts, commitments, dates, or details not present in the incoming email or the reply intent.
+- If the incoming email asks numbered/specific questions, answer each one directly and concretely.
+- Before finishing, check: does this reply contain the actual specific facts from "WHAT THE REPLY SHOULD SAY" below, in plain language? If not, rewrite it so it does.
+- Do NOT describe what you are doing. Output ONLY the email text itself.
 
-INCOMING EMAIL (for context only — use it to understand what you are replying to):
+INCOMING EMAIL TO REPLY TO:
 """
 ${incomingEmail}
 """
 
-═══════════════════════════════════════
-ABSOLUTE RULES — VIOLATING ANY IS A FAILURE:
-═══════════════════════════════════════
-1. Write a proper email structure: greeting → body (all key points addressed) → sign-off. No placeholder like "[Name]" — use the actual sender name from the incoming email, or omit the name gracefully.
-2. Every point in "THE POINTS THAT MUST BE IN THIS REPLY" must appear clearly in the body. Do not summarise vaguely or bury them.
-3. Zero AI filler phrases: do NOT use "I hope this email finds you well," "Thank you for reaching out," "as per my last email," "please do not hesitate," "I trust this clarifies," "looking forward to your response," "should you have any further questions," "I'd like to take this opportunity," or any similar hollow opener/closer.
-4. Do NOT invent facts, commitments, dates, or details that were not stated in the incoming email or the reply intent above.
-5. Sound like the author's voice profile — their rhythm, word choices, personality — not a corporate template.
-6. Do NOT describe what you are doing. Output ONLY the email text itself.`
+WHAT THE REPLY SHOULD SAY (state these specific points plainly - do not abstract or summarize vaguely):
+${replyIntent}`
 
 export async function replyToEmail(voiceProfile, incomingEmail, replyIntent, tone = 'Neutral') {
     return await callGranite(REPLY_TO_EMAIL_PROMPT(voiceProfile, incomingEmail, replyIntent, tone), {
-        maxNewTokens: 700,
-        temperature: 0.55
+        maxNewTokens: 600,
+        temperature: 0.4
     })
 }

@@ -85,95 +85,10 @@ function analyzeVoiceProfileReal(samplesText) {
     }, null, 2)
 }
 
-function processGranitePromptFallback(promptStr) {
-    if (!promptStr) return "The morning light hit the pavement with a quiet, familiar precision."
-
-    // Extract Writing Samples for Voice Analysis
-    const sampleMatch = promptStr.match(/WRITING SAMPLES:\s*["']{0,3}([\s\S]*?)["']{0,3}(?=\n[A-Z_\s]+:|\n\nAnalyze|$)/i)
-    if (sampleMatch && sampleMatch[1].trim()) {
-        return analyzeVoiceProfileReal(sampleMatch[1].trim())
-    }
-
-    // Extract Voice Profile if present
-    let profile = null
-    const profileMatch = promptStr.match(/VOICE PROFILE:\s*([\s\S]*?)(?=\n[A-Z_\s]+:|$)/i)
-    if (profileMatch) {
-        try { profile = JSON.parse(profileMatch[1]) } catch {}
-    }
-
-    // Extract Request
-    const genRequestMatch = promptStr.match(/REQUEST:\s*([\s\S]*?)(?=\n[A-Z_\s]+:|$)/i)
-    const topic = genRequestMatch ? genRequestMatch[1].trim() : ''
-
-    // Extract Facts / Specs
-    const factsMatch = promptStr.match(/REAL FACTS\/DATA TO USE[^\n]*:\s*"""([\s\S]*?)"""/i) || promptStr.match(/REAL FACTS\/DATA TO USE[^\n]*:\s*([\s\S]*?)(?=\n[A-Z_\s]+:|$)/i)
-    const factsText = factsMatch ? factsMatch[1].trim() : ''
-
-    // Extract revoice full text draft if present
-    const origDraftMatch = promptStr.match(/ORIGINAL DRAFT TEXT:\s*["']{0,3}([\s\S]*?)["']{0,3}(?=\n[A-Z_\s]+:|$)/i)
-    if (origDraftMatch && origDraftMatch[1].trim()) {
-        const draftText = origDraftMatch[1].trim()
-        let cleanedText = draftText
-            .replace(/in conclusion,?\s*/gi, '')
-            .replace(/it is important to note that\s*/gi, '')
-            .replace(/delve into\s*/gi, 'examine ')
-            .replace(/a testament to\s*/gi, 'proof of ')
-            .replace(/moreover,?\s*/gi, '')
-            .replace(/furthermore,?\s*/gi, '')
-            .replace(/in today's fast-paced world,?\s*/gi, '')
-            .replace(/I hope this email finds you well,?\s*/gi, '')
-            .replace(/^"|"$/g, '')
-        return cleanedText
-    }
-
-    // Extract Reply Intent if email
-    const intentMatch = promptStr.match(/WHAT THE REPLY SHOULD SAY[^\n]*:\s*([\s\S]*?)(?=\n[A-Z_\s]+:|$)/i) || promptStr.match(/REPLY INTENT:\s*([\s\S]*?)(?=\n[A-Z_\s]+:|$)/i)
-    const intent = intentMatch ? intentMatch[1].trim() : ''
-
-    const toneMatch = promptStr.match(/REQUESTED TONE FOR THIS EMAIL:\s*([A-Za-z]+)/i)
-    const tone = toneMatch ? toneMatch[1].trim() : 'Neutral'
-
-    if (intent) {
-        if (tone.toLowerCase() === 'formal') {
-            return `Thank you for reaching out.\n\n${intent}\n\nPlease let me know if you require any additional information.\n\nBest regards,`
-        }
-        if (tone.toLowerCase() === 'friendly' || tone.toLowerCase() === 'warm') {
-            return `Hi there,\n\n${intent}\n\nLooking forward to hearing your thoughts!\n\nBest,`
-        }
-        return `Hi,\n\n${intent}\n\nBest regards,`
-    }
-
-    if (topic) {
-        const cleanTopic = topic.replace(/^a review (on|of) /i, '').replace(/^an essay (on|about) /i, '')
-        const subjectName = cleanTopic.charAt(0).toUpperCase() + cleanTopic.slice(1)
-
-        // Parse spec lines from factsText if provided
-        const specLines = factsText
-            ? factsText.split('\n').map(l => l.replace(/^-\s*/, '').trim()).filter(l => l.length > 5)
-            : []
-
-        let p1 = `There is something unpretentious and deeply grounding about ${cleanTopic}. You don't choose it to impress a crowd; you choose it because you value durability, clarity, and performance above superficial noise.`
-        let p2 = `Under real-world conditions, the execution is crisp. The mechanical feedback is immediate, the controls feel weighted and purposeful, and the engineering responds with a level of consistency that builds trust over time.`
-        let p3 = `Inside and out, function takes clear precedence over unnecessary complication. Controls remain intuitive, visibility is unobstructed, and every detail serves a clear purpose rather than cluttering the experience with gimmicks.`
-
-        if (specLines.length > 0) {
-            const spec1 = specLines[0]
-            const spec2 = specLines[1] || specLines[0]
-            const spec3 = specLines.slice(2).join('; ')
-
-            p1 = `There is something unpretentious and deeply grounding about ${cleanTopic}. At its core, the platform relies on ${spec1.toLowerCase()}—setting a clear technical standard without superficial noise.`
-            p2 = `Under real-world conditions, the performance data tells a compelling story: ${spec2}. The output is immediate, the controls feel weighted and purposeful, and the engineering responds with a level of consistency that builds trust over demanding workloads.`
-            if (spec3) {
-                p3 = `In terms of real-world specs, key architectural highlights include: ${spec3}. Function takes clear precedence over unnecessary complication—every detail serves a clear operational purpose.`
-            }
-        }
-
-        const p4 = `Ultimately, ${subjectName} proves that when engineering stays focused on fundamental strengths and verified capabilities, the result speaks for itself. It remains a compelling benchmark for anyone who measures value by resilience and long-term reliability.`
-
-        return [p1, p2, p3, p4].join('\n\n')
-    }
-
-    return "The work proceeds with quiet momentum, built on solid foundations and clear execution."
+function processGranitePromptFallback(promptStr, statusCode, errorData) {
+    // Do NOT generate fake content — surface the real error so the UI shows it properly
+    const errDetail = errorData?.error?.message || errorData?.message || JSON.stringify(errorData) || 'Unknown error'
+    throw new Error(`watsonx.ai API error (${statusCode}): ${errDetail}`)
 }
 
 app.post('/api/granite', async (req, res) => {
@@ -203,13 +118,9 @@ app.post('/api/granite', async (req, res) => {
 
         const data = await wxRes.json()
         if (!wxRes.ok) {
-            console.warn('watsonx.ai response notice:', wxRes.status, data)
-            const promptStr = req.body.messages?.[0]?.content || req.body.input || ''
-            const fallbackText = processGranitePromptFallback(promptStr)
-            return res.json({
-                results: [{ generated_text: fallbackText }],
-                raw: data
-            })
+            console.error('watsonx.ai API error:', wxRes.status, JSON.stringify(data))
+            const errMsg = data?.error?.message || data?.message || `HTTP ${wxRes.status}`
+            return res.status(502).json({ error: `Model API failed: ${errMsg}` })
         }
         
         const textOutput = data?.choices?.[0]?.message?.content || ''
