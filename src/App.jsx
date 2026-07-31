@@ -23,10 +23,12 @@ export default function App() {
 
     useEffect(() => {
         const loaded = loadProfiles()
-        setSavedProfiles(loaded)
-        if (loaded.length > 0) {
-            setProfile(loaded[0].profile)
-            setActiveSample(loaded[0].sourceSample)
+        // Filter out any lingering demo profiles
+        const realProfiles = loaded.filter(p => !p.id?.startsWith('demo-'))
+        setSavedProfiles(realProfiles)
+        if (realProfiles.length > 0) {
+            setProfile(realProfiles[0].profile)
+            setActiveSample(realProfiles[0].sourceSample)
         }
     }, [])
 
