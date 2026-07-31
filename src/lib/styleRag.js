@@ -74,7 +74,7 @@ function overlapScore(snippetTokens, queryTokens) {
 }
 
 export function retrieveRelevantSnippets(sample, instruction, k = 3) {
-    if (!sample) return []
+    if (!sample || !instruction) return []
     const snippets = chunkIntoSnippets(sample)
     const queryTokens = tokenize(instruction)
 
@@ -83,10 +83,10 @@ export function retrieveRelevantSnippets(sample, instruction, k = 3) {
         score: overlapScore(tokenize(snippet), queryTokens)
     }))
 
-    const anyMatches = scored.some((s) => s.score > 0)
-    const pool = anyMatches ? scored : snippets.map((s) => ({ snippet: s, score: s.length }))
+    const matches = scored.filter((s) => s.score > 0)
+    if (matches.length === 0) return []
 
-    return pool
+    return matches
         .sort((a, b) => b.score - a.score)
         .slice(0, k)
         .map((s) => s.snippet)
