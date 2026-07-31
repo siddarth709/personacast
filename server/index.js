@@ -36,8 +36,63 @@ async function getIamToken() {
     return cachedToken    
 }
 
+function analyzeVoiceProfileReal(samplesText) {
+    if (!samplesText) return null
+
+    const words = samplesText.split(/\s+/).filter(w => w.length > 0)
+    const sentences = samplesText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0)
+    const avgSentenceLength = Math.round(words.length / Math.max(sentences.length, 1))
+
+    let rhythm = "Balanced, conversational flow with steady sentence cadence."
+    if (avgSentenceLength <= 10) {
+        rhythm = "Short, punchy sentences with sharp, rapid-fire pacing."
+    } else if (avgSentenceLength >= 22) {
+        rhythm = "Lyrical, complex compound sentences with rich subordinate clauses."
+    } else {
+        rhythm = "Dynamic alternating rhythm—mixing short punchy statements with descriptive observations."
+    }
+
+    const lower = samplesText.toLowerCase()
+    const toneWords = []
+    if (/code|span|import|function|api|data|system|config|engine|processor/i.test(lower)) toneWords.push("analytical", "precise", "technical")
+    if (/i |my |me |we |our /i.test(lower)) toneWords.push("candid", "personal")
+    if (/feel|love|memory|quiet|night|shadow|rain|light/i.test(lower)) toneWords.push("evocative", "reflective")
+    if (/!|\?|really|obviously|clearly|never|always/i.test(lower)) toneWords.push("emphatic", "direct")
+    if (toneWords.length < 3) toneWords.push("observant", "articulate", "measured")
+
+    const habits = []
+    if (samplesText.includes('—') || samplesText.includes('--')) habits.push("Frequent use of em-dashes for mid-thought pivots")
+    if (samplesText.includes(';') || samplesText.includes(':')) habits.push("Use of semicolons and colons to link complex ideas")
+    if (/\(.*?\)/.test(samplesText)) habits.push("Parenthetical side notes and inner thoughts")
+    if (/code|import|function|def |class /i.test(lower)) habits.push("Technical terminology & code-first metaphors")
+    if (habits.length < 2) habits.push("Active verbs and sensory descriptions")
+
+    const themes = []
+    if (/system|performance|data|model|build|code|tech|api/i.test(lower)) themes.push("engineering & system architecture")
+    if (/time|memory|past|history|years|life|story/i.test(lower)) themes.push("memory & passage of time")
+    if (/city|work|people|team|world|street/i.test(lower)) themes.push("human connections & environment")
+    if (themes.length < 2) themes.push("craftsmanship & observational details")
+
+    let signatureLine = sentences.find(s => s.length > 25 && s.length < 100) || sentences[0] || "Every line holds a story waiting to be told."
+    signatureLine = signatureLine.trim().replace(/^["']|["']$/g, '')
+
+    return JSON.stringify({
+        tone_words: toneWords.slice(0, 4),
+        sentence_rhythm: rhythm,
+        recurring_phrases_or_habits: habits.slice(0, 3),
+        recurring_themes: themes.slice(0, 3),
+        signature_line: signatureLine
+    }, null, 2)
+}
+
 function processGranitePromptFallback(promptStr) {
     if (!promptStr) return "The morning light hit the pavement with a quiet, familiar precision."
+
+    // Extract Writing Samples for Voice Analysis
+    const sampleMatch = promptStr.match(/WRITING SAMPLES:\s*["']{0,3}([\s\S]*?)["']{0,3}(?=\n[A-Z_\s]+:|\n\nAnalyze|$)/i)
+    if (sampleMatch && sampleMatch[1].trim()) {
+        return analyzeVoiceProfileReal(sampleMatch[1].trim())
+    }
 
     // Extract Voice Profile if present
     let profile = null
