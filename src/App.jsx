@@ -17,9 +17,9 @@ export default function App() {
     const [isGenerating, setIsGenerating] = useState(false)
     const [result, setResult] = useState(null)
     const [error, setError] = useState(null)
-    const [showGenerator, setShowGenerator] = useState(false)
     const [activeMode, setActiveMode] = useState('write')
     const [savedProfiles, setSavedProfiles] = useState([])
+    const [showAnalyzer, setShowAnalyzer] = useState(false)
 
     useEffect(() => {
         const loaded = loadProfiles()
@@ -27,7 +27,6 @@ export default function App() {
         if (loaded.length > 0) {
             setProfile(loaded[0].profile)
             setActiveSample(loaded[0].sourceSample)
-            setShowGenerator(true)
         }
     }, [])
 
@@ -38,7 +37,7 @@ export default function App() {
             const extracted = await extractVoiceProfile(samples)
             setProfile(extracted)
             setActiveSample(samples)
-            setShowGenerator(true)
+            setShowAnalyzer(false)
         } catch (err) {
             setError(err.message)
         } finally {
@@ -64,15 +63,8 @@ export default function App() {
     function handleSelectSavedProfile(saved) {
         setProfile(saved.profile)
         setActiveSample(saved.sourceSample)
-        setShowGenerator(true)
         setResult(null)
-    }
-
-    function handleStartNewVoice() {
-        setProfile(null)
-        setActiveSample(null)
-        setShowGenerator(false)
-        setResult(null)
+        setShowAnalyzer(false)
     }
 
     return (
@@ -93,20 +85,33 @@ export default function App() {
 
                 <PersonaBlender savedProfiles={savedProfiles} />
 
-                {!profile && (
-                    <SampleIntake onAnalyze={handleAnalyze} isAnalyzing={isAnalyzing} />
+                {/* Voice Analyzer & Intake */}
+                <div className="analyzer-section">
+                    {!profile || showAnalyzer ? (
+                        <div className="analyzer-card-wrapper">
+                            {profile && (
+                                <button className="text-btn close-analyzer-btn" onClick={() => setShowAnalyzer(false)}>
+                                    ✕ Close Analyzer
+                                </button>
+                            )}
+                            <SampleIntake onAnalyze={handleAnalyze} isAnalyzing={isAnalyzing} />
+                        </div>
+                    ) : (
+                        <div className="analyzer-toggle-bar">
+                            <button className="secondary-btn analyze-toggle-btn" onClick={() => setShowAnalyzer(true)}>
+                                🔬 Analyze New Writing Sample / Build Voice Profile
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Voice Fingerprint Display */}
+                {profile && (
+                    <VoiceFingerprint profile={profile} />
                 )}
 
-                {profile && !showGenerator && (
-                    <>
-                        <VoiceFingerprint profile={profile} onContinue={() => setShowGenerator(true)} />
-                        <button className="text-btn" onClick={handleStartNewVoice}>
-                            ← build a different voice instead
-                        </button>
-                    </>
-                )}
-
-                {profile && showGenerator && (
+                {/* Mode Tabs & Generation Suite */}
+                {profile && (
                     <>
                         <div className="mode-tab-bar">
                             <button
