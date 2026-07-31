@@ -883,3 +883,213 @@ textarea:focus {
 .copy-btn:hover {
     background: var(--indigo);
 }
+
+/* Provider Cards Selector Grid */
+.provider-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.65rem;
+    margin-bottom: 1.5rem;
+}
+
+.provider-card-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--ink-soft);
+    border: 1px solid var(--rule);
+    padding: 0.65rem 0.85rem;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.provider-card-btn:hover {
+    border-color: var(--indigo-bright);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.provider-card-btn.active {
+    background: rgba(99, 102, 241, 0.12);
+    border-color: var(--indigo-bright);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.2);
+}
+
+.provider-logo-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.provider-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.provider-card-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--parchment);
+}
+
+.provider-card-status {
+    font-size: 0.68rem;
+    color: var(--parchment-dim);
+}
+
+/* Connection Box */
+.connection-box {
+    background: var(--ink-soft);
+    border: 1px solid var(--rule);
+    padding: 1rem;
+    border-radius: 10px;
+
+}
+
+.connection-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.brand-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--parchment);
+}
+
+.connect-action-btn {
+    background: var(--indigo);
+    border: 1px solid var(--indigo-bright);
+    color: var(--parchment);
+    font-size: 0.76rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.connect-action-btn:hover {
+    background: #4f46e5;
+}
+
+.disconnect-btn {
+    font-size: 0.74rem;
+    color: #f87171;
+}
+
+.connection-email-tag {
+    font-size: 0.75rem;
+    color: var(--parchment-dim);
+    margin-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 0.5rem;
+}
+
+.live-dot-green {
+    color: #4ade80;
+    font-size: 0.7rem;
+}
+
+.badge-connected {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--sage);
+    background: rgba(142, 168, 128, 0.12);
+    border: 1px solid rgba(142, 168, 128, 0.3);
+    padding: 0.35rem 0.85rem;
+    border-radius: 100px;
+}
+
+.badge-connect-btn {
+    background: var(--indigo);
+    border: 1px solid var(--indigo-bright);
+    color: var(--parchment);
+    font-size: 0.78rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 100px;
+    cursor: pointer;
+}
+
+/* OAuth Auth Modal Overlay */
+.auth-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.auth-modal-card {
+    background: var(--ink-card);
+    border: 1px solid var(--indigo-bright);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    border-radius: 16px;
+    max-width: 460px;
+    width: 100%;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    animation: rise 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.auth-modal-header h3 {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    color: #fff;
+    margin: 0;
+}
+
+.auth-modal-desc {
+    font-size: 0.83rem;
+    color: var(--parchment-dim);
+    line-height: 1.5;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.auth-form label {
+    font-size: 0.75rem;
+    color: var(--parchment-dim);
+    font-weight: 500;
+}
+
+.auth-form input {
+    background: var(--ink-soft);
+    border: 1px solid var(--rule);
+    color: var(--parchment);
+    font-size: 0.88rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+}
+
+.auth-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}

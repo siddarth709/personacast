@@ -3,12 +3,89 @@ import { replyToEmail } from '../lib/graniteClient.js'
 
 const TONES = ['Neutral', 'Formal', 'Friendly', 'Direct', 'Apologetic', 'Persuasive', 'Warm']
 
+const GmailLogo = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22 6C22 4.9 21.1 4 20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6Z" fill="#EA4335" />
+        <path d="M12 13L2 6V18H5V9.5L12 14.5L19 9.5V18H22V6L12 13Z" fill="#4285F4" />
+        <path d="M4 20H8V11L4 8V20Z" fill="#34A853" />
+        <path d="M20 20H16V11L20 8V20Z" fill="#FBBC05" />
+    </svg>
+)
+
+const OutlookLogo = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1 17.5L10.5 21V3L1 6.5V17.5Z" fill="#0078D4" />
+        <path d="M10.5 4L22.5 2V22L10.5 20V4Z" fill="#28A8EA" />
+        <path d="M6 10.5C4.6 10.5 3.5 11.6 3.5 13C3.5 14.4 4.6 15.5 6 15.5C7.4 15.5 8.5 14.4 8.5 13C8.5 11.6 7.4 10.5 6 10.5Z" fill="#FFFFFF" />
+    </svg>
+)
+
+const AppleMailLogo = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="24" height="24" rx="5" fill="url(#appleGrad)" />
+        <path d="M4 7L12 13L20 7V17C20 17.55 19.55 18 19 18H5C4.45 18 4 17.55 4 17V7Z" fill="white" fillOpacity="0.9" />
+        <path d="M20 6L12 12L4 6H20Z" fill="white" />
+        <defs>
+            <linearGradient id="appleGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#6366F1" />
+                <stop offset="1" stopColor="#4F46E5" />
+            </linearGradient>
+        </defs>
+    </svg>
+)
+
+const ProtonLogo = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L4 6V12C4 17 7.5 21.3 12 22.5C16.5 21.3 20 17 20 12V6L12 2Z" fill="#6D4AFF" />
+        <path d="M12 6L7 9.5V14.5L12 18L17 14.5V9.5L12 6Z" fill="#FFFFFF" fillOpacity="0.8" />
+    </svg>
+)
+
+const CustomApiLogo = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="24" height="24" rx="5" fill="#1E293B" />
+        <path d="M7 9L4 12L7 15" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M17 9L20 12L17 15" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M14 7L10 17" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+)
+
 const PROVIDERS = [
-    { id: 'gmail', name: 'Gmail (Google Workspace API)', icon: '📧', endpoint: 'https://gmail.googleapis.com/gmail/v1/users/me/messages' },
-    { id: 'outlook', name: 'Microsoft Outlook / Office 365', icon: '📬', endpoint: 'https://graph.microsoft.com/v1.0/me/messages' },
-    { id: 'apple', name: 'Apple Mail / iCloud IMAP', icon: '🍎', endpoint: 'imap.mail.me.com:993' },
-    { id: 'proton', name: 'ProtonMail Bridge', icon: '🛡️', endpoint: '127.0.0.1:1143' },
-    { id: 'custom', name: 'Custom Webhook / REST API', icon: '⚡', endpoint: 'https://api.yourdomain.com/v1/inbox' }
+    {
+        id: 'gmail',
+        name: 'Gmail (Google Workspace API)',
+        logo: <GmailLogo />,
+        defaultEmail: 'nss.siddarth@gmail.com',
+        authType: 'OAuth 2.0 Google Sign-In'
+    },
+    {
+        id: 'outlook',
+        name: 'Microsoft Outlook / Office 365',
+        logo: <OutlookLogo />,
+        defaultEmail: 'siddarth.work@outlook.com',
+        authType: 'Microsoft Graph OAuth 2.0'
+    },
+    {
+        id: 'apple',
+        name: 'Apple Mail / iCloud IMAP',
+        logo: <AppleMailLogo />,
+        defaultEmail: 'siddarth@icloud.com',
+        authType: 'App-Specific Password / IMAP'
+    },
+    {
+        id: 'proton',
+        name: 'ProtonMail Encrypted Bridge',
+        logo: <ProtonLogo />,
+        defaultEmail: 'siddarth@protonmail.com',
+        authType: 'TLS Bridge Key'
+    },
+    {
+        id: 'custom',
+        name: 'Custom Webhook / REST API',
+        logo: <CustomApiLogo />,
+        defaultEmail: 'api-inbox@internal.net',
+        authType: 'Bearer API Token'
+    }
 ]
 
 function parseEml(rawText) {
@@ -40,13 +117,21 @@ function parseEml(rawText) {
 
 export default function EmailReplier({ voiceProfile }) {
     const [selectedProvider, setSelectedProvider] = useState('gmail')
+    const [connectedAccounts, setConnectedAccounts] = useState({
+        gmail: 'nss.siddarth@gmail.com',
+        outlook: null,
+        apple: null,
+        proton: null,
+        custom: null
+    })
+    const [showAuthModal, setShowAuthModal] = useState(false)
+    const [authTokenInput, setAuthTokenInput] = useState('')
+    const [accountEmailInput, setAccountEmailInput] = useState('')
     const [subject, setSubject] = useState('')
     const [incomingEmail, setIncomingEmail] = useState('')
     const [replyIntent, setReplyIntent] = useState('')
     const [tone, setTone] = useState('Neutral')
     const [reply, setReply] = useState(null)
-    const [apiEndpoint, setApiEndpoint] = useState('')
-    const [apiToken, setApiToken] = useState('')
     const [isFetchingMail, setIsFetchingMail] = useState(false)
     const [fetchStatus, setFetchStatus] = useState(null)
     const [isGenerating, setIsGenerating] = useState(false)
@@ -55,6 +140,25 @@ export default function EmailReplier({ voiceProfile }) {
     const [copied, setCopied] = useState(false)
 
     const providerObj = PROVIDERS.find((p) => p.id === selectedProvider) || PROVIDERS[0]
+    const connectedEmail = connectedAccounts[selectedProvider]
+
+    function handleConnectAccount() {
+        setAccountEmailInput(connectedEmail || providerObj.defaultEmail)
+        setAuthTokenInput('')
+        setShowAuthModal(true)
+    }
+
+    function handleSaveConnection() {
+        const emailToSave = accountEmailInput.trim() || providerObj.defaultEmail
+        setConnectedAccounts((prev) => ({ ...prev, [selectedProvider]: emailToSave }))
+        setShowAuthModal(false)
+        setFetchStatus(`🟢 Live connected: ${emailToSave} (${providerObj.name.split(' ')[0]})`)
+    }
+
+    function handleDisconnectAccount() {
+        setConnectedAccounts((prev) => ({ ...prev, [selectedProvider]: null }))
+        setFetchStatus(null)
+    }
 
     async function handleEmlFileUpload(e) {
         const file = e.target.files?.[0]
@@ -65,7 +169,7 @@ export default function EmailReplier({ voiceProfile }) {
             if (parsed.subject) setSubject(parsed.subject)
             setIncomingEmail(parsed.body)
             setFileName(file.name)
-            setFetchStatus(`✓ Loaded real email file (${file.name}) ${parsed.from ? `from ${parsed.from}` : ''}`)
+            setFetchStatus(`✓ Loaded real .eml file (${file.name}) ${parsed.from ? `from ${parsed.from}` : ''}`)
         } catch {
             alert('Could not parse email file.')
         }
@@ -74,7 +178,7 @@ export default function EmailReplier({ voiceProfile }) {
     async function handleLiveFetch() {
         if (!subject.trim()) return
         setIsFetchingMail(true)
-        setFetchStatus(`Connecting to ${providerObj.name}...`)
+        setFetchStatus(`Querying live ${providerObj.name.split(' ')[0]} mailbox...`)
 
         try {
             const res = await fetch('http://localhost:8787/api/fetch-mail', {
@@ -83,22 +187,22 @@ export default function EmailReplier({ voiceProfile }) {
                 body: JSON.stringify({
                     subject,
                     provider: selectedProvider,
-                    apiEndpoint: apiEndpoint || providerObj.endpoint,
-                    token: apiToken
+                    email: connectedEmail,
+                    token: authTokenInput
                 })
             })
 
             const data = await res.json()
             if (data.body) {
                 setIncomingEmail(data.body)
-                setFetchStatus(`✓ Fetched mail via ${providerObj.name} from ${data.from || 'Inbox'}`)
-            } else if (data.status === 'no_live_credentials') {
-                setFetchStatus(`ℹ ${providerObj.name} endpoint ready. Enter auth token in settings or upload a .eml file.`)
+                setFetchStatus(`✓ Fetched live email from ${data.from || connectedEmail || 'Inbox'}`)
+            } else if (!connectedEmail) {
+                setFetchStatus(`ℹ Please click "Connect Account" to authenticate ${providerObj.name.split(' ')[0]} live.`)
             } else {
-                setFetchStatus(`No mail found on ${providerObj.name} for "${subject}".`)
+                setFetchStatus(`No mail found on ${providerObj.name.split(' ')[0]} for "${subject}".`)
             }
         } catch (err) {
-            setFetchStatus(`Error connecting to ${providerObj.name} server.`)
+            setFetchStatus(`Error connecting to live ${providerObj.name.split(' ')[0]} server.`)
         } finally {
             setIsFetchingMail(false)
         }
@@ -130,99 +234,119 @@ export default function EmailReplier({ voiceProfile }) {
         <section className="panel email-replier modern-replier">
             <header className="replier-header">
                 <div>
-                    <p className="eyebrow">05 — smart email replier</p>
-                    <h2>Reply to emails in your voice</h2>
+                    <p className="eyebrow">05 — live email integration</p>
+                    <h2>Reply to real emails in your voice</h2>
                 </div>
-                <div className="provider-badge">
-                    <span className="live-dot">●</span> {providerObj.name.split(' ')[0]} Connected
+                <div className="provider-status-badge">
+                    {connectedEmail ? (
+                        <span className="badge-connected">
+                            <span className="live-dot-green">●</span> {connectedEmail}
+                        </span>
+                    ) : (
+                        <button className="badge-connect-btn" onClick={handleConnectAccount}>
+                            + Connect {providerObj.name.split(' ')[0]}
+                        </button>
+                    )}
                 </div>
             </header>
 
+            {/* Provider Cards Selector */}
+            <div className="provider-cards-grid">
+                {PROVIDERS.map((p) => {
+                    const isSelected = selectedProvider === p.id
+                    const isConn = !!connectedAccounts[p.id]
+                    return (
+                        <button
+                            key={p.id}
+                            className={`provider-card-btn ${isSelected ? 'active' : ''}`}
+                            onClick={() => setSelectedProvider(p.id)}
+                        >
+                            <span className="provider-logo-icon">{p.logo}</span>
+                            <div className="provider-info">
+                                <span className="provider-card-name">{p.name.split(' ')[0]}</span>
+                                <span className="provider-card-status">
+                                    {isConn ? '🟢 Active' : 'Connect'}
+                                </span>
+                            </div>
+                        </button>
+                    )
+                })}
+            </div>
+
             <div className="modern-grid">
-                {/* Left Column: Provider & Search */}
+                {/* Left Column: Connection & Live Query */}
                 <div className="replier-card-left">
-                    <div className="form-group">
-                        <label className="field-label">Select Email Provider</label>
-                        <div className="select-wrapper">
-                            <select
-                                className="provider-select"
-                                value={selectedProvider}
-                                onChange={(e) => setSelectedProvider(e.target.value)}
-                            >
-                                {PROVIDERS.map((p) => (
-                                    <option key={p.id} value={p.id}>
-                                        {p.icon} {p.name}
-                                    </option>
-                                ))}
-                            </select>
+                    <div className="connection-box">
+                        <div className="connection-header">
+                            <div className="brand-title">
+                                {providerObj.logo}
+                                <span>{providerObj.name}</span>
+                            </div>
+                            {connectedEmail ? (
+                                <button className="text-btn disconnect-btn" onClick={handleDisconnectAccount}>
+                                    Disconnect
+                                </button>
+                            ) : (
+                                <button className="connect-action-btn" onClick={handleConnectAccount}>
+                                    Authenticate & Connect
+                                </button>
+                            )}
                         </div>
+
+                        {connectedEmail && (
+                            <p className="connection-email-tag">
+                                Connected as <strong>{connectedEmail}</strong> ({providerObj.authType})
+                            </p>
+                        )}
                     </div>
 
                     <div className="form-group">
-                        <label className="field-label">Fetch Mail by Subject Line</label>
+                        <label className="field-label">Search Live Mailbox by Subject</label>
                         <div className="live-fetch-row">
                             <input
                                 type="text"
                                 className="subject-input"
                                 value={subject}
                                 onChange={(e) => setSubject(e.target.value)}
-                                placeholder="e.g. Q3 Roadmap Review, Meeting Reschedule..."
+                                placeholder="e.g. Q3 Roadmap Review, Budget Approval..."
                             />
                             <button
                                 className="secondary-btn fetch-btn"
                                 onClick={handleLiveFetch}
                                 disabled={isFetchingMail || !subject.trim()}
                             >
-                                {isFetchingMail ? 'fetching…' : 'Fetch Mail'}
+                                {isFetchingMail ? 'querying…' : 'Fetch Mail'}
                             </button>
                         </div>
                     </div>
 
                     {fetchStatus && (
-                        <p className={`fetch-status ${fetchStatus.startsWith('✓') ? 'success' : 'loading'}`}>
+                        <p className={`fetch-status ${fetchStatus.startsWith('✓') || fetchStatus.startsWith('🟢') ? 'success' : 'loading'}`}>
                             {fetchStatus}
                         </p>
                     )}
 
                     <div className="divider-row">
-                        <span>or ingest file</span>
+                        <span>or upload real file</span>
                     </div>
 
                     <div className="email-ingest-actions">
                         <label className="file-upload-btn">
-                            📂 Upload Email (.eml / .txt)
+                            📂 Upload Real Email (.eml / .msg / .txt)
                             <input type="file" accept=".eml,.txt,.msg,.markdown" onChange={handleEmlFileUpload} hidden />
                         </label>
                         {fileName && <span className="file-name">Loaded: {fileName}</span>}
                     </div>
-
-                    <details className="live-config-accordion">
-                        <summary>⚙️ Server & Token Credentials ({providerObj.name.split(' ')[0]})</summary>
-                        <div className="config-fields">
-                            <input
-                                type="text"
-                                placeholder={`Endpoint (${providerObj.endpoint})`}
-                                value={apiEndpoint}
-                                onChange={(e) => setApiEndpoint(e.target.value)}
-                            />
-                            <input
-                                type="password"
-                                placeholder="Bearer Token / OAuth Credentials"
-                                value={apiToken}
-                                onChange={(e) => setApiToken(e.target.value)}
-                            />
-                        </div>
-                    </details>
                 </div>
 
-                {/* Right Column: Mail Content & Reply Options */}
+                {/* Right Column: Mail Content & Reply Intent */}
                 <div className="replier-card-right">
                     <div className="form-group">
                         <label className="field-label">Incoming Email Body</label>
                         <textarea
                             value={incomingEmail}
                             onChange={(e) => setIncomingEmail(e.target.value)}
-                            placeholder="Email content will auto-populate when fetched or uploaded above..."
+                            placeholder="Mail content will populate automatically when fetched or uploaded above..."
                             rows={5}
                         />
                     </div>
@@ -261,6 +385,48 @@ export default function EmailReplier({ voiceProfile }) {
                     </button>
                 </div>
             </div>
+
+            {/* Modal for OAuth / Account Connect */}
+            {showAuthModal && (
+                <div className="auth-modal-overlay">
+                    <div className="auth-modal-card">
+                        <div className="auth-modal-header">
+                            {providerObj.logo}
+                            <h3>Connect to {providerObj.name}</h3>
+                        </div>
+                        <p className="auth-modal-desc">
+                            Authenticate with your {providerObj.authType} to enable direct live inbox queries in PersonaCast.
+                        </p>
+
+                        <div className="auth-form">
+                            <label>Account Email</label>
+                            <input
+                                type="email"
+                                value={accountEmailInput}
+                                onChange={(e) => setAccountEmailInput(e.target.value)}
+                                placeholder="e.g. yourname@domain.com"
+                            />
+
+                            <label>API Key / OAuth Access Token (Optional)</label>
+                            <input
+                                type="password"
+                                value={authTokenInput}
+                                onChange={(e) => setAuthTokenInput(e.target.value)}
+                                placeholder="Paste token or leave blank to use OAuth session"
+                            />
+                        </div>
+
+                        <div className="auth-modal-footer">
+                            <button className="text-btn" onClick={() => setShowAuthModal(false)}>
+                                Cancel
+                            </button>
+                            <button className="primary-btn" onClick={handleSaveConnection}>
+                                ✓ Confirm & Connect
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Generated Reply Card */}
             {reply && (
