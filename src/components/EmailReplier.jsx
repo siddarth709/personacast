@@ -58,6 +58,13 @@ const PROVIDERS = [
     { id: 'custom', name: 'Custom Mail', logo: <CustomApiLogo /> }
 ]
 
+const QUICK_PRESETS = [
+    { subject: 'You are officially a Kaggler', from: 'Kaggle Team <no-reply@kaggle.com>' },
+    { subject: 'Q3 Strategy Roadmap Review', from: 'Sarah Chen (Product Director)' },
+    { subject: 'Rescheduling Thursday Sync', from: 'Dave Miller (Engineering Lead)' },
+    { subject: 'Q4 Budget Proposal Approval', from: 'Elena Rostova (Finance)' }
+]
+
 function cleanEmailBody(rawBody) {
     if (!rawBody) return ''
     let text = rawBody
@@ -139,6 +146,7 @@ export default function EmailReplier({ voiceProfile }) {
     const [replyIntent, setReplyIntent] = useState('')
     const [tone, setTone] = useState('Neutral')
     const [reply, setReply] = useState(null)
+    const [isFetchingMail, setIsFetchingMail] = useState(false)
     const [isGenerating, setIsGenerating] = useState(false)
     const [error, setError] = useState(null)
     const [fileName, setFileName] = useState(null)
@@ -146,6 +154,42 @@ export default function EmailReplier({ voiceProfile }) {
     const [copied, setCopied] = useState(false)
 
     const providerObj = PROVIDERS.find((p) => p.id === selectedProvider) || PROVIDERS[0]
+
+    async function handleLiveFetch(querySubject = subject) {
+        const searchSub = querySubject.trim()
+        if (!searchSub) return
+        setIsFetchingMail(true)
+        setStatusMsg(`Fetching email for "${searchSub}"...`)
+
+        try {
+            const res = await fetch('http://localhost:8787/api/fetch-mail', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    subject: searchSub,
+                    provider: selectedProvider
+                })
+            })
+
+            const data = await res.json()
+            if (data.body) {
+                setIncomingEmail(data.body)
+                setSubject(data.subject || searchSub)
+                setStatusMsg(`✓ Auto-fetched email from ${data.from || providerObj.name}`)
+            } else {
+                setStatusMsg(`No email found for "${searchSub}".`)
+            }
+        } catch (err) {
+            setStatusMsg(`Fetch notice: ${err.message}`)
+        } finally {
+            setIsFetchingMail(false)
+        }
+    }
+
+    function handleSelectPreset(preset) {
+        setSubject(preset.subject)
+        handleLiveFetch(preset.subject)
+    }
 
     async function handleEmlFileUpload(e) {
         const file = e.target.files?.[0]
@@ -213,9 +257,49 @@ export default function EmailReplier({ voiceProfile }) {
                 </div>
             </div>
 
+            {/* Fetch by Subject Line Bar */}
+            <div className="form-group">
+                <label className="field-label">Fetch Email by Subject Line</label>
+                <div className="live-fetch-row">
+                    <input
+                        type="text"
+                        className="subject-input"
+                        value={subject}
+                        onChange={(e) => setSubject(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleLiveFetch()}
+                        placeholder="Type subject line (e.g. Kaggle, Q3 Roadmap, Budget)..."
+                    />
+                    <button
+                        className="secondary-btn fetch-btn"
+                        onClick={() => handleLiveFetch()}
+                        disabled={isFetchingMail || !subject.trim()}
+                    >
+                        {isFetchingMail ? 'fetching…' : 'Fetch Mail'}
+                    </button>
+                </div>
+
+                {/* Quick Subject Chips */}
+                <div className="preset-subjects">
+                    <span className="preset-label">Quick Inbox Subjects:</span>
+                    {QUICK_PRESETS.map((preset) => (
+                        <button
+                            key={preset.subject}
+                            className={`preset-chip ${subject === preset.subject ? 'active' : ''}`}
+                            onClick={() => handleSelectPreset(preset)}
+                        >
+                            📩 {preset.subject}
+                        </button>
+                    ))}
+                </div>
+
+                {statusMsg && <p className="fetch-status success">{statusMsg}</p>}
+            </div>
+
             {/* File Upload Bar */}
             <div className="form-group">
-                <label className="field-label">Upload Real Email File</label>
+                <div className="divider-row">
+                    <span>or upload real file</span>
+                </div>
                 <div className="email-ingest-actions">
                     <label className="file-upload-btn">
                         📂 Upload Real Email (.eml / .msg / .txt)
@@ -223,7 +307,6 @@ export default function EmailReplier({ voiceProfile }) {
                     </label>
                     {fileName && <span className="file-name">Loaded: {fileName}</span>}
                 </div>
-                {statusMsg && <p className="fetch-status success">{statusMsg}</p>}
             </div>
 
             {/* Incoming Email Text Area */}
@@ -232,7 +315,7 @@ export default function EmailReplier({ voiceProfile }) {
                 <textarea
                     value={incomingEmail}
                     onChange={(e) => setIncomingEmail(e.target.value)}
-                    placeholder="Paste email content here or upload a .eml file above..."
+                    placeholder="Email body will populate automatically when fetched or uploaded above..."
                     rows={6}
                 />
             </div>
