@@ -8,6 +8,7 @@ import { extractVoiceProfile, generateInVoice, generateInVoiceWithExamples } fro
 import { loadProfiles } from './lib/profileStore'
 import './styles/app.css'
 import DriftEditor from './components/DriftEditor'
+import EmailReplier from './components/EmailReplier'
 
 export default function App() {
     const [profile, setProfile] = useState(null)
@@ -107,6 +108,7 @@ export default function App() {
                             onResultChange={setResult}
                             activeSample={activeSample}
                         />
+                        <EmailReplier voiceProfile={profile} />
                         <DriftEditor voiceProfile={profile} />
                     </>
                 )}

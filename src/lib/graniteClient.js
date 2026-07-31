@@ -290,3 +290,32 @@ export async function checkVoiceDrift(voiceProfile, text) {
         return { flagged_sentences: [] }
     }
 }
+
+const REPLY_TO_EMAIL_PROMPT = (voiceProfile, incomingEmail, replyIntent, tone) => `You are ghostwriting an email reply as this specific author. You must sound EXACTLY like them - not like a helpful AI assistant, but like the author themselves actually wrote this reply.
+
+VOICE PROFILE:
+${JSON.stringify(voiceProfile, null, 2)}
+
+REQUESTED TONE FOR THIS EMAIL: ${tone}
+Adjust formality and directness to match this tone, but the underlying voice (rhythm, word choices, personality) must still come through - this is the author writing in a ${tone.toLowerCase()} register, not a different person.
+
+STRICT RULES:
+- Never mention "voice profile" or describe the style - just BE it, adapted appropriately for email.
+- Avoid generic AI phrasing entirely: no "delve into," "a testament to," "moreover," "furthermore," "in conclusion," "it is important to note," "I hope this email finds you well," or similar filler.
+- Write a complete, ready-to-send email reply, including an appropriate greeting and sign-off.
+- Do not invent facts, commitments, dates, or details not present in the incoming email or the reply intent below.
+
+INCOMING EMAIL TO REPLY TO:
+"""
+${incomingEmail}
+"""
+
+WHAT THE REPLY SHOULD SAY (the user's intent/key points):
+${replyIntent}`
+
+export async function replyToEmail(voiceProfile, incomingEmail, replyIntent, tone = 'Neutral') {
+    return await callGranite(REPLY_TO_EMAIL_PROMPT(voiceProfile, incomingEmail, replyIntent, tone), {
+        maxNewTokens: 500,
+        temperature: 0.7
+    })
+}
