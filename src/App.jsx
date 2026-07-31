@@ -22,7 +22,13 @@ export default function App() {
     const [savedProfiles, setSavedProfiles] = useState([])
 
     useEffect(() => {
-        setSavedProfiles(loadProfiles())
+        const loaded = loadProfiles()
+        setSavedProfiles(loaded)
+        if (loaded.length > 0) {
+            setProfile(loaded[0].profile)
+            setActiveSample(loaded[0].sourceSample)
+            setShowGenerator(true)
+        }
     }, [])
 
     async function handleAnalyze(samples) {
@@ -32,6 +38,7 @@ export default function App() {
             const extracted = await extractVoiceProfile(samples)
             setProfile(extracted)
             setActiveSample(samples)
+            setShowGenerator(true)
         } catch (err) {
             setError(err.message)
         } finally {
@@ -57,7 +64,7 @@ export default function App() {
     function handleSelectSavedProfile(saved) {
         setProfile(saved.profile)
         setActiveSample(saved.sourceSample)
-        setShowGenerator(false)
+        setShowGenerator(true)
         setResult(null)
     }
 
