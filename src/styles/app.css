@@ -1127,3 +1127,25 @@ textarea:focus {
     border-color: var(--indigo-bright);
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
+
+/* Specs Action Bar */
+.specs-action-bar {
+    margin: 0.75rem 0 0.5rem;
+}
+
+.fetch-specs-btn {
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid var(--indigo-bright);
+    color: var(--parchment);
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.fetch-specs-btn:hover {
+    background: var(--indigo);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}

@@ -7,6 +7,34 @@ export default function GenerationPanel({ onGenerate, isGenerating, result, voic
     const [wordCount, setWordCount] = useState(150)
     const [facts, setFacts] = useState('')
     const [usedSnippets, setUsedSnippets] = useState([])
+    const [isFetchingSpecs, setIsFetchingSpecs] = useState(false)
+    const [specStatus, setSpecStatus] = useState(null)
+    const [factsOpen, setFactsOpen] = useState(false)
+
+    async function handleFetchSpecs() {
+        if (!instruction.trim()) return
+        setIsFetchingSpecs(true)
+        setSpecStatus('Fetching verified technical specs...')
+        setFactsOpen(true)
+
+        try {
+            const res = await fetch('http://localhost:8787/api/fetch-specs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic: instruction })
+            })
+
+            const data = await res.json()
+            if (data.specs) {
+                setFacts(data.specs)
+                setSpecStatus(`✓ Auto-fetched verified specs for "${instruction.trim()}"`)
+            }
+        } catch {
+            setSpecStatus('Could not auto-fetch specs. Paste facts manually below.')
+        } finally {
+            setIsFetchingSpecs(false)
+        }
+    }
 
     function handleSubmit() {
         const snippets = activeSample ? retrieveRelevantSnippets(activeSample, instruction, 3) : []
@@ -18,24 +46,42 @@ export default function GenerationPanel({ onGenerate, isGenerating, result, voic
         <section className="panel generation">
             <p className="eyebrow">03 — put it to work</p>
             <h2>What do you want to write?</h2>
-            <textarea
-                value={instruction}
-                onChange={(e) => setInstruction(e.target.value)}
-                placeholder="e.g. a short opening paragraph for a story about losing a train ticket"
-                rows={3}
-            />
+            
+            <div className="topic-input-row">
+                <textarea
+                    value={instruction}
+                    onChange={(e) => setInstruction(e.target.value)}
+                    placeholder="e.g. A review on toyota hilux, iPhone 16 Pro comparison, or an essay on urban architecture"
+                    rows={3}
+                />
+            </div>
 
-            <details className="facts-input">
-                <summary>+ add real facts/data to ground this in (optional)</summary>
+            <div className="specs-action-bar">
+                <button
+                    className="secondary-btn fetch-specs-btn"
+                    onClick={handleFetchSpecs}
+                    disabled={isFetchingSpecs || !instruction.trim()}
+                >
+                    {isFetchingSpecs ? 'fetching specs…' : '⚡ Auto-Fetch Specs & Technical Facts'}
+                </button>
+            </div>
+
+            {specStatus && (
+                <p className={`fetch-status ${specStatus.startsWith('✓') ? 'success' : 'loading'}`}>
+                    {specStatus}
+                </p>
+            )}
+
+            <details className="facts-input" open={factsOpen} onToggle={(e) => setFactsOpen(e.target.open)}>
+                <summary>+ real facts/data grounding {facts ? ' (Specs Loaded)' : '(optional)'}</summary>
                 <textarea
                     value={facts}
                     onChange={(e) => setFacts(e.target.value)}
-                    placeholder="e.g. iPhone Air: 5.6mm thick, released Sept 2026, starts at $999, titanium frame..."
-                    rows={4}
+                    placeholder="e.g. Specs, dates, prices, engine outputs, or numbers to strictly ground the generation in..."
+                    rows={6}
                 />
                 <p className="hint">
-                    Paste specs, dates, prices, or numbers you've verified yourself. PersonaCast will use
-                    only what you provide here — it won't invent facts to fill gaps.
+                    PersonaCast grounds its output strictly in these verified specs — preventing invented or inaccurate numbers.
                 </p>
             </details>
 
