@@ -51,7 +51,7 @@ STRICT RULES:
 - Do not hedge or write like a balanced article. Write like a person with opinions and a particular way of talking.
 - The "recurring_themes" in the voice profile describe topics this author tends to gravitate toward in their OWN writing - they are not a mandate to insert unrelated technical topics into every piece. Only reference them if genuinely relevant to the current REQUEST.
 - Write approximately ${wordCount} words - not significantly more or less. End on a complete thought, don't trail off mid-sentence.
-${facts ? `- You are given real facts/data below. Use ONLY these - do not invent, guess, or recall any other numbers, dates, specs, or statistics from your own knowledge, since you may be wrong or outdated. If the request needs a fact you weren't given, write around it in general terms rather than making one up.
+${facts ? `- You are given real verified specs/facts below. You MUST explicitly weave and fuse these specific technical numbers, dates, figures, and specifications directly into the body paragraphs of your generated writing. Do not write a generic summary without them. Use ONLY these numbers - do not invent, guess, or alter any figures.
 
 REAL FACTS/DATA TO USE (verbatim, do not alter numbers):
 """
