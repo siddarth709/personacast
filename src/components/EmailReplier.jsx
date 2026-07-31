@@ -51,41 +51,11 @@ const CustomApiLogo = () => (
 )
 
 const PROVIDERS = [
-    {
-        id: 'gmail',
-        name: 'Gmail (Google Workspace API)',
-        logo: <GmailLogo />,
-        defaultEmail: 'nss.siddarth@gmail.com',
-        authType: 'OAuth 2.0 Google Sign-In'
-    },
-    {
-        id: 'outlook',
-        name: 'Microsoft Outlook / Office 365',
-        logo: <OutlookLogo />,
-        defaultEmail: 'siddarth.work@outlook.com',
-        authType: 'Microsoft Graph OAuth 2.0'
-    },
-    {
-        id: 'apple',
-        name: 'Apple Mail / iCloud IMAP',
-        logo: <AppleMailLogo />,
-        defaultEmail: 'siddarth@icloud.com',
-        authType: 'App-Specific Password / IMAP'
-    },
-    {
-        id: 'proton',
-        name: 'ProtonMail Encrypted Bridge',
-        logo: <ProtonLogo />,
-        defaultEmail: 'siddarth@protonmail.com',
-        authType: 'TLS Bridge Key'
-    },
-    {
-        id: 'custom',
-        name: 'Custom Webhook / REST API',
-        logo: <CustomApiLogo />,
-        defaultEmail: 'api-inbox@internal.net',
-        authType: 'Bearer API Token'
-    }
+    { id: 'gmail', name: 'Gmail', logo: <GmailLogo /> },
+    { id: 'outlook', name: 'Outlook', logo: <OutlookLogo /> },
+    { id: 'apple', name: 'Apple Mail', logo: <AppleMailLogo /> },
+    { id: 'proton', name: 'ProtonMail', logo: <ProtonLogo /> },
+    { id: 'custom', name: 'Custom Mail', logo: <CustomApiLogo /> }
 ]
 
 function parseEml(rawText) {
@@ -117,48 +87,18 @@ function parseEml(rawText) {
 
 export default function EmailReplier({ voiceProfile }) {
     const [selectedProvider, setSelectedProvider] = useState('gmail')
-    const [connectedAccounts, setConnectedAccounts] = useState({
-        gmail: 'nss.siddarth@gmail.com',
-        outlook: null,
-        apple: null,
-        proton: null,
-        custom: null
-    })
-    const [showAuthModal, setShowAuthModal] = useState(false)
-    const [authTokenInput, setAuthTokenInput] = useState('')
-    const [accountEmailInput, setAccountEmailInput] = useState('')
     const [subject, setSubject] = useState('')
     const [incomingEmail, setIncomingEmail] = useState('')
     const [replyIntent, setReplyIntent] = useState('')
     const [tone, setTone] = useState('Neutral')
     const [reply, setReply] = useState(null)
-    const [isFetchingMail, setIsFetchingMail] = useState(false)
-    const [fetchStatus, setFetchStatus] = useState(null)
     const [isGenerating, setIsGenerating] = useState(false)
     const [error, setError] = useState(null)
     const [fileName, setFileName] = useState(null)
+    const [statusMsg, setStatusMsg] = useState(null)
     const [copied, setCopied] = useState(false)
 
     const providerObj = PROVIDERS.find((p) => p.id === selectedProvider) || PROVIDERS[0]
-    const connectedEmail = connectedAccounts[selectedProvider]
-
-    function handleConnectAccount() {
-        setAccountEmailInput(connectedEmail || providerObj.defaultEmail)
-        setAuthTokenInput('')
-        setShowAuthModal(true)
-    }
-
-    function handleSaveConnection() {
-        const emailToSave = accountEmailInput.trim() || providerObj.defaultEmail
-        setConnectedAccounts((prev) => ({ ...prev, [selectedProvider]: emailToSave }))
-        setShowAuthModal(false)
-        setFetchStatus(`🟢 Live connected: ${emailToSave} (${providerObj.name.split(' ')[0]})`)
-    }
-
-    function handleDisconnectAccount() {
-        setConnectedAccounts((prev) => ({ ...prev, [selectedProvider]: null }))
-        setFetchStatus(null)
-    }
 
     async function handleEmlFileUpload(e) {
         const file = e.target.files?.[0]
@@ -169,43 +109,9 @@ export default function EmailReplier({ voiceProfile }) {
             if (parsed.subject) setSubject(parsed.subject)
             setIncomingEmail(parsed.body)
             setFileName(file.name)
-            setFetchStatus(`✓ Loaded real .eml file (${file.name}) ${parsed.from ? `from ${parsed.from}` : ''}`)
+            setStatusMsg(`✓ Uploaded real email file (${file.name}) ${parsed.from ? `from ${parsed.from}` : ''}`)
         } catch {
             alert('Could not parse email file.')
-        }
-    }
-
-    async function handleLiveFetch() {
-        if (!subject.trim()) return
-        setIsFetchingMail(true)
-        setFetchStatus(`Querying live ${providerObj.name.split(' ')[0]} mailbox...`)
-
-        try {
-            const res = await fetch('http://localhost:8787/api/fetch-mail', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    subject,
-                    provider: selectedProvider,
-                    email: connectedEmail,
-                    token: authTokenInput
-                })
-            })
-
-            const data = await res.json()
-            if (data.body) {
-                setIncomingEmail(data.body)
-                setFetchStatus(`✓ Fetched live email from ${data.from || connectedEmail || 'Inbox'}`)
-            } else if (!connectedEmail) {
-                setFetchStatus(`ℹ Please click "Connect Account" to authenticate ${providerObj.name.split(' ')[0]} live.`)
-            } else {
-                setFetchStatus(`No mail found on ${providerObj.name.split(' ')[0]} for "${subject}".`)
-            }
-        } catch (err) {
-            console.error('Fetch mail error:', err)
-            setFetchStatus(`Error querying server: ${err.message || 'Connection failed'}`)
-        } finally {
-            setIsFetchingMail(false)
         }
     }
 
@@ -235,201 +141,91 @@ export default function EmailReplier({ voiceProfile }) {
         <section className="panel email-replier modern-replier">
             <header className="replier-header">
                 <div>
-                    <p className="eyebrow">05 — live email integration</p>
-                    <h2>Reply to real emails in your voice</h2>
-                </div>
-                <div className="provider-status-badge">
-                    {connectedEmail ? (
-                        <span className="badge-connected">
-                            <span className="live-dot-green">●</span> {connectedEmail}
-                        </span>
-                    ) : (
-                        <button className="badge-connect-btn" onClick={handleConnectAccount}>
-                            + Connect {providerObj.name.split(' ')[0]}
-                        </button>
-                    )}
+                    <p className="eyebrow">05 — smart email replier</p>
+                    <h2>Reply to emails in your voice</h2>
                 </div>
             </header>
 
-            {/* Provider Cards Selector */}
-            <div className="provider-cards-grid">
-                {PROVIDERS.map((p) => {
-                    const isSelected = selectedProvider === p.id
-                    const isConn = !!connectedAccounts[p.id]
-                    return (
-                        <button
-                            key={p.id}
-                            className={`provider-card-btn ${isSelected ? 'active' : ''}`}
-                            onClick={() => setSelectedProvider(p.id)}
-                        >
-                            <span className="provider-logo-icon">{p.logo}</span>
-                            <div className="provider-info">
-                                <span className="provider-card-name">{p.name.split(' ')[0]}</span>
-                                <span className="provider-card-status">
-                                    {isConn ? '🟢 Active' : 'Connect'}
-                                </span>
-                            </div>
-                        </button>
-                    )
-                })}
-            </div>
-
-            <div className="modern-grid">
-                {/* Left Column: Connection & Live Query */}
-                <div className="replier-card-left">
-                    <div className="connection-box">
-                        <div className="connection-header">
-                            <div className="brand-title">
-                                {providerObj.logo}
-                                <span>{providerObj.name}</span>
-                            </div>
-                            {connectedEmail ? (
-                                <button className="text-btn disconnect-btn" onClick={handleDisconnectAccount}>
-                                    Disconnect
-                                </button>
-                            ) : (
-                                <button className="connect-action-btn" onClick={handleConnectAccount}>
-                                    Authenticate & Connect
-                                </button>
-                            )}
-                        </div>
-
-                        {connectedEmail && (
-                            <p className="connection-email-tag">
-                                Connected as <strong>{connectedEmail}</strong> ({providerObj.authType})
-                            </p>
-                        )}
-                    </div>
-
-                    <div className="form-group">
-                        <label className="field-label">Search Live Mailbox by Subject</label>
-                        <div className="live-fetch-row">
-                            <input
-                                type="text"
-                                className="subject-input"
-                                value={subject}
-                                onChange={(e) => setSubject(e.target.value)}
-                                placeholder="e.g. Q3 Roadmap Review, Budget Approval..."
-                            />
+            {/* Email Provider Selector Chips */}
+            <div className="form-group">
+                <label className="field-label">Target Email Format</label>
+                <div className="provider-cards-grid">
+                    {PROVIDERS.map((p) => {
+                        const isSelected = selectedProvider === p.id
+                        return (
                             <button
-                                className="secondary-btn fetch-btn"
-                                onClick={handleLiveFetch}
-                                disabled={isFetchingMail || !subject.trim()}
+                                key={p.id}
+                                className={`provider-card-btn ${isSelected ? 'active' : ''}`}
+                                onClick={() => setSelectedProvider(p.id)}
                             >
-                                {isFetchingMail ? 'querying…' : 'Fetch Mail'}
+                                <span className="provider-logo-icon">{p.logo}</span>
+                                <span className="provider-card-name">{p.name}</span>
                             </button>
-                        </div>
-                    </div>
-
-                    {fetchStatus && (
-                        <p className={`fetch-status ${fetchStatus.startsWith('✓') || fetchStatus.startsWith('🟢') ? 'success' : 'loading'}`}>
-                            {fetchStatus}
-                        </p>
-                    )}
-
-                    <div className="divider-row">
-                        <span>or upload real file</span>
-                    </div>
-
-                    <div className="email-ingest-actions">
-                        <label className="file-upload-btn">
-                            📂 Upload Real Email (.eml / .msg / .txt)
-                            <input type="file" accept=".eml,.txt,.msg,.markdown" onChange={handleEmlFileUpload} hidden />
-                        </label>
-                        {fileName && <span className="file-name">Loaded: {fileName}</span>}
-                    </div>
-                </div>
-
-                {/* Right Column: Mail Content & Reply Intent */}
-                <div className="replier-card-right">
-                    <div className="form-group">
-                        <label className="field-label">Incoming Email Body</label>
-                        <textarea
-                            value={incomingEmail}
-                            onChange={(e) => setIncomingEmail(e.target.value)}
-                            placeholder="Mail content will populate automatically when fetched or uploaded above..."
-                            rows={5}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="field-label">What your reply should say (Key Intent)</label>
-                        <textarea
-                            value={replyIntent}
-                            onChange={(e) => setReplyIntent(e.target.value)}
-                            placeholder="e.g. Confirm Thursday meeting at 3pm, ask for revised budget proposal."
-                            rows={3}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="field-label">Reply Tone Register</label>
-                        <div className="tone-selector">
-                            {TONES.map((t) => (
-                                <button
-                                    key={t}
-                                    className={`tone-chip ${tone === t ? 'active' : ''}`}
-                                    onClick={() => setTone(t)}
-                                >
-                                    {t}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <button
-                        className="primary-btn generate-reply-btn"
-                        onClick={handleGenerate}
-                        disabled={!voiceProfile || incomingEmail.trim().length === 0 || replyIntent.trim().length === 0 || isGenerating}
-                    >
-                        {isGenerating ? 'drafting reply…' : 'Draft reply in my voice'}
-                    </button>
+                        )
+                    })}
                 </div>
             </div>
 
-            {/* Modal for OAuth / Account Connect */}
-            {showAuthModal && (
-                <div className="auth-modal-overlay">
-                    <div className="auth-modal-card">
-                        <div className="auth-modal-header">
-                            {providerObj.logo}
-                            <h3>Connect to {providerObj.name}</h3>
-                        </div>
-                        <p className="auth-modal-desc">
-                            Authenticate with your {providerObj.authType} to enable direct live inbox queries in PersonaCast.
-                        </p>
-
-                        <div className="auth-form">
-                            <label>Account Email</label>
-                            <input
-                                type="email"
-                                value={accountEmailInput}
-                                onChange={(e) => setAccountEmailInput(e.target.value)}
-                                placeholder="e.g. yourname@domain.com"
-                            />
-
-                            <label>API Key / OAuth Access Token (Optional)</label>
-                            <input
-                                type="password"
-                                value={authTokenInput}
-                                onChange={(e) => setAuthTokenInput(e.target.value)}
-                                placeholder="Paste token or leave blank to use OAuth session"
-                            />
-                        </div>
-
-                        <div className="auth-modal-footer">
-                            <button className="text-btn" onClick={() => setShowAuthModal(false)}>
-                                Cancel
-                            </button>
-                            <button className="primary-btn" onClick={handleSaveConnection}>
-                                ✓ Confirm & Connect
-                            </button>
-                        </div>
-                    </div>
+            {/* File Upload Bar */}
+            <div className="form-group">
+                <label className="field-label">Upload Real Email File</label>
+                <div className="email-ingest-actions">
+                    <label className="file-upload-btn">
+                        📂 Upload Real Email (.eml / .msg / .txt)
+                        <input type="file" accept=".eml,.txt,.msg,.markdown" onChange={handleEmlFileUpload} hidden />
+                    </label>
+                    {fileName && <span className="file-name">Loaded: {fileName}</span>}
                 </div>
-            )}
+                {statusMsg && <p className="fetch-status success">{statusMsg}</p>}
+            </div>
 
-            {/* Generated Reply Card */}
+            {/* Incoming Email Text Area */}
+            <div className="form-group">
+                <label className="field-label">Incoming Email Content {subject ? `— Subject: ${subject}` : ''}</label>
+                <textarea
+                    value={incomingEmail}
+                    onChange={(e) => setIncomingEmail(e.target.value)}
+                    placeholder="Paste email content here or upload a .eml file above..."
+                    rows={6}
+                />
+            </div>
+
+            {/* Reply Intent */}
+            <div className="form-group">
+                <label className="field-label">What your reply should say (Key Points / Intent)</label>
+                <textarea
+                    value={replyIntent}
+                    onChange={(e) => setReplyIntent(e.target.value)}
+                    placeholder="e.g. Yes I can meet Thursday at 3pm, but not Friday. Also ask about the budget proposal."
+                    rows={3}
+                />
+            </div>
+
+            {/* Tone Selector */}
+            <div className="form-group">
+                <label className="field-label">Reply Tone Register</label>
+                <div className="tone-selector">
+                    {TONES.map((t) => (
+                        <button
+                            key={t}
+                            className={`tone-chip ${tone === t ? 'active' : ''}`}
+                            onClick={() => setTone(t)}
+                        >
+                            {t}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <button
+                className="primary-btn generate-reply-btn"
+                onClick={handleGenerate}
+                disabled={!voiceProfile || incomingEmail.trim().length === 0 || replyIntent.trim().length === 0 || isGenerating}
+            >
+                {isGenerating ? 'drafting reply…' : `Draft ${providerObj.name} reply in my voice`}
+            </button>
+
+            {/* Draft Result View */}
             {reply && (
                 <div className="result modern-result-card">
                     <div className="result-header">
