@@ -12,7 +12,52 @@ function tokenize(text) {
         .filter((w) => w.length > 2 && !STOPWORDS.has(w))
 }
 
+function isRawCodeLine(text) {
+    const codePattern = /^(import\s+|from\s+\w+\s+import|def\s+\w+|class\s+\w+|try:|except\s+|if\s+__name__|span\.|tracer\.|#\s*\w+\.py)/i
+    const codeSymbols = (text.match(/[{}[\]();=><]/g) || []).length
+    return codePattern.test(text.trim()) || codeSymbols > 5
+}
+
+function cleanProseSnippet(text) {
+    return text
+        .replace(/#\s*[^\n]*/g, '')
+        .replace(/tracer\.[a-z0-9_()."']+/gi, '')
+        .replace(/span\.[a-z0-9_()."']+/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+}
+
 function chunkIntoSnippets(sample) {
+    const paragraphs = sample.split(/\n\s*\n/)
+    const snippets = []
+
+    for (const para of paragraphs) {
+        const sentences = para.split(/(?<=[.!?])\s+/)
+        let currentChunk = ''
+
+        for (const s of sentences) {
+            const trimmed = s.trim()
+            if (!trimmed || isRawCodeLine(trimmed)) continue
+            
+            const cleaned = cleanProseSnippet(trimmed)
+            if (cleaned.length < 15) continue
+
+            if ((currentChunk + ' ' + cleaned).length > 280) {
+                if (currentChunk.length > 30) snippets.push(currentChunk.trim())
+                currentChunk = cleaned
+            } else {
+                currentChunk = currentChunk ? `${currentChunk} ${cleaned}` : cleaned
+            }
+        }
+
+        if (currentChunk.length > 30) {
+            snippets.push(currentChunk.trim())
+        }
+    }
+
+    if (snippets.length > 0) return snippets
+
+    // Fallback if sample was pure code
     return sample
         .split(/(?<=[.!?])\s+/)
         .map((s) => s.trim())
@@ -28,7 +73,6 @@ function overlapScore(snippetTokens, queryTokens) {
     return matches
 }
 
-
 export function retrieveRelevantSnippets(sample, instruction, k = 3) {
     if (!sample) return []
     const snippets = chunkIntoSnippets(sample)
@@ -38,7 +82,6 @@ export function retrieveRelevantSnippets(sample, instruction, k = 3) {
         snippet,
         score: overlapScore(tokenize(snippet), queryTokens)
     }))
-
 
     const anyMatches = scored.some((s) => s.score > 0)
     const pool = anyMatches ? scored : snippets.map((s) => ({ snippet: s, score: s.length }))
