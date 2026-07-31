@@ -202,7 +202,8 @@ export default function EmailReplier({ voiceProfile }) {
                 setFetchStatus(`No mail found on ${providerObj.name.split(' ')[0]} for "${subject}".`)
             }
         } catch (err) {
-            setFetchStatus(`Error connecting to live ${providerObj.name.split(' ')[0]} server.`)
+            console.error('Fetch mail error:', err)
+            setFetchStatus(`Error querying server: ${err.message || 'Connection failed'}`)
         } finally {
             setIsFetchingMail(false)
         }
