@@ -37,38 +37,35 @@ async function getIamToken() {
 }
 
 function processGranitePromptFallback(promptStr) {
-    if (!promptStr) return "Thanks for reaching out! I've received your note and will follow up shortly."
+    if (!promptStr) return "I've received your note and will get back to you shortly."
 
-    // Extract Reply Intent if present
-    const intentMatch = promptStr.match(/REPLY INTENT:\s*([\s\S]*?)(?=\n[A-Z_\s]+:|$)/i) || promptStr.match(/what your reply should say:\s*([\s\S]*?)(?=\n|$)/i)
+    const intentMatch = promptStr.match(/WHAT THE REPLY SHOULD SAY[^\n]*:\s*([\s\S]*?)(?=\n[A-Z_\s]+:|$)/i) || promptStr.match(/REPLY INTENT:\s*([\s\S]*?)(?=\n[A-Z_\s]+:|$)/i)
     const intent = intentMatch ? intentMatch[1].trim() : ''
 
-    // Extract Tone if present
     const toneMatch = promptStr.match(/REQUESTED TONE FOR THIS EMAIL:\s*([A-Za-z]+)/i)
     const tone = toneMatch ? toneMatch[1].trim() : 'Neutral'
 
-    // Extract general prompt if not email reply
     const genRequestMatch = promptStr.match(/REQUEST:\s*([\s\S]*?)(?=\n[A-Z_\s]+:|$)/i)
     const request = genRequestMatch ? genRequestMatch[1].trim() : ''
 
     if (intent) {
         if (tone.toLowerCase() === 'formal') {
-            return `Thank you for your email.\n\n${intent}\n\nPlease let me know if you require any additional information.\n\nBest regards,`
+            return `Hello,\n\n${intent}\n\nSincerely,`
         }
         if (tone.toLowerCase() === 'friendly' || tone.toLowerCase() === 'warm') {
-            return `Thanks so much for reaching out!\n\n${intent}\n\nLooking forward to catching up soon!`
+            return `Hi there,\n\n${intent}\n\nBest,`
         }
         if (tone.toLowerCase() === 'direct') {
-            return `${intent}\n\nLet me know if you need anything else.`
+            return `Hi,\n\n${intent}\n\nBest,`
         }
-        return `Thanks for the note.\n\n${intent}\n\nBest regards,`
+        return `Hi,\n\n${intent}\n\nBest regards,`
     }
 
     if (request) {
-        return `Here is a drafted response based on your request:\n\n${request}`
+        return request
     }
 
-    return "Thank you for the update! Everything looks good on my end."
+    return "Got your message, following up on the details shortly."
 }
 
 app.post('/api/granite', async (req, res) => {

@@ -297,20 +297,23 @@ VOICE PROFILE:
 ${JSON.stringify(voiceProfile, null, 2)}
 
 REQUESTED TONE FOR THIS EMAIL: ${tone}
-Adjust formality and directness to match this tone, but the underlying voice (rhythm, word choices, personality) must still come through - this is the author writing in a ${tone.toLowerCase()} register, not a different person.
+Adjust formality and directness to match this tone, but the underlying voice (rhythm, word choices, personality) must still come through.
+
+CRITICAL RULE: The "WHAT THE REPLY SHOULD SAY" section below contains the actual facts and points that must appear in the reply. Do not write a vague, generic acknowledgment instead of using them. Every specific point listed must be addressed clearly and directly in the reply - do not skip, soften into vagueness, or replace any of them with generic pleasantries.
 
 STRICT RULES:
 - Never mention "voice profile" or describe the style - just BE it, adapted appropriately for email.
-- Avoid generic AI phrasing entirely: no "delve into," "a testament to," "moreover," "furthermore," "in conclusion," "it is important to note," "I hope this email finds you well," or similar filler.
+- Avoid generic AI phrasing entirely: no "delve into," "a testament to," "moreover," "furthermore," "in conclusion," "it is important to note," "I hope this email finds you well," "thank you for the update," "everything looks good," or similar filler that doesn't convey real information.
 - Write a complete, ready-to-send email reply, including an appropriate greeting and sign-off.
 - Do not invent facts, commitments, dates, or details not present in the incoming email or the reply intent below.
+- If the incoming email asks numbered/specific questions, answer each one directly rather than giving one vague summary sentence.
 
 INCOMING EMAIL TO REPLY TO:
 """
 ${incomingEmail}
 """
 
-WHAT THE REPLY SHOULD SAY (the user's intent/key points):
+WHAT THE REPLY SHOULD SAY (these specific points MUST appear in the reply):
 ${replyIntent}`
 
 export async function replyToEmail(voiceProfile, incomingEmail, replyIntent, tone = 'Neutral') {
