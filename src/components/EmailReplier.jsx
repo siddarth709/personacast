@@ -3,48 +3,32 @@ import { replyToEmail } from '../lib/graniteClient.js'
 
 const TONES = ['Neutral', 'Formal', 'Friendly', 'Direct', 'Apologetic', 'Persuasive', 'Warm']
 
-const MOCK_INBOX = [
-    {
-        subject: 'Q3 Strategy Sync',
-        from: 'Sarah Chen (Product Director)',
-        body: `Hi team,
+function parseEml(rawText) {
+    const lines = rawText.split(/\r?\n/)
+    let subject = ''
+    let from = ''
+    let bodyStartIndex = -1
 
-Following up on our Q3 roadmap review. We need to align on whether we're prioritizing the new mobile API endpoints or the analytics dashboard revamp first. Could you send over your thoughts and availability for a quick sync this week?
-
-Best regards,
-Sarah Chen`
-    },
-    {
-        subject: 'Rescheduling Thursday Meeting',
-        from: 'Dave Miller (Engineering Lead)',
-        body: `Hey there,
-
-Something urgent came up for Friday afternoon so I won't be able to make our 2 PM check-in. Would Thursday at 3 PM or next Monday morning work better on your end?
-
-Thanks,
-Dave`
-    },
-    {
-        subject: 'Q4 Budget Approval',
-        from: 'Elena Rostova (Finance)',
-        body: `Hi Siddarth,
-
-I reviewed the Q4 software & tooling proposal you submitted. The numbers look reasonable overall, but finance needs a quick breakdown on the $1,200 cloud infrastructure item before signing off. Can you clarify that part?
-
-Regards,
-Elena`
-    },
-    {
-        subject: 'Project Status Update',
-        from: 'Mark Vance (Client Success)',
-        body: `Hi Siddarth,
-
-Could you give us a quick status update on the PersonaCast integration milestones? The client is asking for an estimated delivery date for the beta release.
-
-Best regards,
-Mark`
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]
+        if (line.trim() === '' && bodyStartIndex === -1) {
+            bodyStartIndex = i + 1
+            break
+        }
+        if (line.toLowerCase().startsWith('subject:')) {
+            subject = line.substring(8).trim()
+        }
+        if (line.toLowerCase().startsWith('from:')) {
+            from = line.substring(5).trim()
+        }
     }
-]
+
+    const body = bodyStartIndex !== -1 && bodyStartIndex < lines.length
+        ? lines.slice(bodyStartIndex).join('\n').trim()
+        : rawText
+
+    return { subject, from, body }
+}
 
 export default function EmailReplier({ voiceProfile }) {
     const [subject, setSubject] = useState('')
@@ -52,43 +36,55 @@ export default function EmailReplier({ voiceProfile }) {
     const [replyIntent, setReplyIntent] = useState('')
     const [tone, setTone] = useState('Neutral')
     const [reply, setReply] = useState(null)
+    const [apiEndpoint, setApiEndpoint] = useState('')
+    const [apiToken, setApiToken] = useState('')
     const [isFetchingMail, setIsFetchingMail] = useState(false)
     const [fetchStatus, setFetchStatus] = useState(null)
     const [isGenerating, setIsGenerating] = useState(false)
     const [error, setError] = useState(null)
+    const [fileName, setFileName] = useState(null)
 
-    function handleSubjectChange(val) {
-        setSubject(val)
-        if (val.trim().length === 0) {
-            setFetchStatus(null)
-            return
+    async function handleEmlFileUpload(e) {
+        const file = e.target.files?.[0]
+        if (!file) return
+        try {
+            const rawContent = await file.text()
+            const parsed = parseEml(rawContent)
+            if (parsed.subject) setSubject(parsed.subject)
+            setIncomingEmail(parsed.body)
+            setFileName(file.name)
+            setFetchStatus(`✓ Loaded real email file (${file.name}) ${parsed.from ? `from ${parsed.from}` : ''}`)
+        } catch {
+            alert('Could not parse email file.')
         }
-
-        setIsFetchingMail(true)
-        setFetchStatus('fetching mail from inbox…')
-
-        setTimeout(() => {
-            const normalized = val.toLowerCase()
-            const match = MOCK_INBOX.find((item) =>
-                item.subject.toLowerCase().includes(normalized) ||
-                normalized.includes(item.subject.toLowerCase().split(' ')[0])
-            )
-
-            if (match) {
-                setIncomingEmail(match.body)
-                setFetchStatus(`✓ Auto-fetched mail from ${match.from}`)
-            } else {
-                setIncomingEmail(`Hi,\n\nFollowing up regarding "${val}". Could you please share your latest updates and availability on this?\n\nBest regards,\nSender`)
-                setFetchStatus(`✓ Auto-generated email body for subject "${val}"`)
-            }
-            setIsFetchingMail(false)
-        }, 300)
     }
 
-    function handleSelectPresetSubject(preset) {
-        setSubject(preset.subject)
-        setIncomingEmail(preset.body)
-        setFetchStatus(`✓ Auto-fetched mail from ${preset.from}`)
+    async function handleLiveFetch() {
+        if (!subject.trim()) return
+        setIsFetchingMail(true)
+        setFetchStatus('Connecting to live email server…')
+
+        try {
+            const res = await fetch('http://localhost:8787/api/fetch-mail', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subject, apiEndpoint, token: apiToken })
+            })
+
+            const data = await res.json()
+            if (data.body) {
+                setIncomingEmail(data.body)
+                setFetchStatus(`✓ Fetched live mail from ${data.from || 'Inbox'}`)
+            } else if (data.status === 'no_live_credentials') {
+                setFetchStatus('ℹ Connect a live Gmail/Outlook API endpoint below, or upload a real .eml file above.')
+            } else {
+                setFetchStatus('No live mail found for this subject.')
+            }
+        } catch (err) {
+            setFetchStatus('Error connecting to live email endpoint.')
+        } finally {
+            setIsFetchingMail(false)
+        }
     }
 
     async function handleGenerate() {
@@ -107,41 +103,63 @@ export default function EmailReplier({ voiceProfile }) {
 
     return (
         <section className="panel email-replier">
-            <p className="eyebrow">05 — reply to an email, in your voice</p>
+            <p className="eyebrow">05 — reply to a real email, in your voice</p>
 
-            <label className="field-label">email subject (enter to auto-fetch mail)</label>
-            <input
-                type="text"
-                className="subject-input"
-                value={subject}
-                onChange={(e) => handleSubjectChange(e.target.value)}
-                placeholder="Type or select a subject (e.g. Q3 Strategy Sync, Meeting Reschedule)..."
-            />
+            <div className="email-ingest-actions">
+                <label className="file-upload-btn">
+                    📂 Upload real email (.eml / .txt)
+                    <input type="file" accept=".eml,.txt,.msg,.markdown" onChange={handleEmlFileUpload} hidden />
+                </label>
+                {fileName && <span className="file-name">Loaded: {fileName}</span>}
+            </div>
 
-            <div className="preset-subjects">
-                <span className="preset-label">Quick Inbox Subjects:</span>
-                {MOCK_INBOX.map((item) => (
-                    <button
-                        key={item.subject}
-                        className={`preset-chip ${subject === item.subject ? 'active' : ''}`}
-                        onClick={() => handleSelectPresetSubject(item)}
-                    >
-                        📩 {item.subject}
-                    </button>
-                ))}
+            <label className="field-label">search live inbox by subject</label>
+            <div className="live-fetch-row">
+                <input
+                    type="text"
+                    className="subject-input"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="Enter email subject line to query live server..."
+                />
+                <button
+                    className="secondary-btn fetch-btn"
+                    onClick={handleLiveFetch}
+                    disabled={isFetchingMail || !subject.trim()}
+                >
+                    {isFetchingMail ? 'connecting…' : 'Fetch live mail'}
+                </button>
             </div>
 
             {fetchStatus && (
-                <p className={`fetch-status ${isFetchingMail ? 'loading' : 'success'}`}>
+                <p className={`fetch-status ${fetchStatus.startsWith('✓') ? 'success' : 'loading'}`}>
                     {fetchStatus}
                 </p>
             )}
 
-            <label className="field-label">incoming email body (auto-populated)</label>
+            <details className="live-config-accordion">
+                <summary>⚙️ Live Inbox Server Config (Gmail / Outlook / Webhook API)</summary>
+                <div className="config-fields">
+                    <input
+                        type="text"
+                        placeholder="Live Email API Endpoint (e.g. https://api.yourdomain.com/v1/inbox)"
+                        value={apiEndpoint}
+                        onChange={(e) => setApiEndpoint(e.target.value)}
+                    />
+                    <input
+                        type="password"
+                        placeholder="Bearer Token / Secret"
+                        value={apiToken}
+                        onChange={(e) => setApiToken(e.target.value)}
+                    />
+                </div>
+            </details>
+
+            <label className="field-label">incoming email body (real email text)</label>
             <textarea
                 value={incomingEmail}
                 onChange={(e) => setIncomingEmail(e.target.value)}
-                placeholder="Email body will auto-populate when subject is entered, or paste manually..."
+                placeholder="Paste real incoming email text here or upload .eml file above..."
                 rows={6}
             />
 

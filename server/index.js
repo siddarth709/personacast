@@ -64,6 +64,35 @@ app.post('/api/granite', async (req, res) => {
     } catch(err){
         res.status(500).json({ error: err.message })
     }
+app.post('/api/fetch-mail', async (req, res) => {
+    try {
+        const { subject, apiEndpoint, token } = req.body
+        const emailEndpoint = apiEndpoint || process.env.EMAIL_API_ENDPOINT
+        const authToken = token || process.env.EMAIL_API_TOKEN
+
+        if (emailEndpoint) {
+            const fetchRes = await fetch(`${emailEndpoint}?subject=${encodeURIComponent(subject)}`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            if (!fetchRes.ok) throw new Error(`Live Email API failed (${fetchRes.status})`)
+            const data = await fetchRes.json()
+            return res.json({
+                subject: data.subject || subject,
+                from: data.from || data.sender || 'Live Email Inbox',
+                body: data.body || data.text || data.snippet || ''
+            })
+        }
+
+        res.json({
+            status: 'no_live_credentials',
+            message: 'To connect live Gmail/Outlook, set EMAIL_API_ENDPOINT & EMAIL_API_TOKEN in server/.env or supply them in settings.'
+        })
+    } catch (err) {
+        res.status(500).json({ error: err.message })
+    }
 })
 
 const PORT = process.env.PORT || 8787
