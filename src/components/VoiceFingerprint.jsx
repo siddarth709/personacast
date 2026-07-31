@@ -1,12 +1,22 @@
-export default function VoiceFingerprint({ profile, onContinue }) {
+import { useState } from 'react'
+
+export default function VoiceFingerprint({ profile, onSave }) {
     if (!profile) return null
 
     const { tone_words, sentence_rhythm, recurring_phrases_or_habits, recurring_themes, signature_line } = profile
+    const [voiceName, setVoiceName] = useState('')
+    const [saved, setSaved] = useState(false)
+
+    function handleSave() {
+        if (!voiceName.trim()) return
+        onSave(voiceName.trim())
+        setSaved(true)
+    }
 
     return (
         <section className="panel fingerprint">
             <p className="eyebrow">02 — your voice fingerprint</p>
-            
+
             <div className="tone-cloud" aria-label="Tone traits">
                 {tone_words?.map((word, i) => (
                     <span
@@ -49,10 +59,35 @@ export default function VoiceFingerprint({ profile, onContinue }) {
                 </div>
             </div>
 
-            {onContinue && (
-                <button className="primary-btn" onClick={onContinue}>
-                    Write something in this voice →
-                </button>
+            {/* Save voice inline */}
+            {onSave && (
+                <div className="save-voice-inline">
+                    {saved ? (
+                        <p className="save-success">✓ Voice saved! Use it above or start writing below.</p>
+                    ) : (
+                        <>
+                            <p className="save-voice-label">Give this voice a name to save it:</p>
+                            <div className="save-voice-row">
+                                <input
+                                    type="text"
+                                    className="save-voice-input"
+                                    value={voiceName}
+                                    onChange={(e) => setVoiceName(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                                    placeholder="e.g. My Tech Blog, Weekend Essays, Work Emails..."
+                                    autoFocus
+                                />
+                                <button
+                                    className="primary-btn save-voice-btn"
+                                    onClick={handleSave}
+                                    disabled={!voiceName.trim()}
+                                >
+                                    Save Voice
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
             )}
         </section>
     )

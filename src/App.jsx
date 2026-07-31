@@ -5,7 +5,7 @@ import GenerationPanel from './components/GenerationPanel'
 import ProfileManager from './components/ProfileManager'
 import PersonaBlender from './components/PersonaBlender'
 import { extractVoiceProfile, generateInVoice, generateInVoiceWithExamples } from './lib/graniteClient'
-import { loadProfiles } from './lib/profileStore'
+import { loadProfiles, saveProfile } from './lib/profileStore'
 import './styles/app.css'
 import DriftEditor from './components/DriftEditor'
 import EmailReplier from './components/EmailReplier'
@@ -20,6 +20,7 @@ export default function App() {
     const [activeMode, setActiveMode] = useState('write')
     const [savedProfiles, setSavedProfiles] = useState([])
     const [showAnalyzer, setShowAnalyzer] = useState(false)
+    const [pendingProfile, setPendingProfile] = useState(null)  // analyzed but not yet saved
 
     useEffect(() => {
         const loaded = loadProfiles()
@@ -37,14 +38,22 @@ export default function App() {
         setError(null)
         try {
             const extracted = await extractVoiceProfile(samples)
-            setProfile(extracted)
-            setActiveSample(samples)
+            setPendingProfile({ profile: extracted, sourceSample: samples })
             setShowAnalyzer(false)
         } catch (err) {
             setError(err.message)
         } finally {
             setIsAnalyzing(false)
         }
+    }
+
+    function handleSaveVoice(name) {
+        if (!pendingProfile) return
+        const updated = saveProfile(name, pendingProfile.profile, pendingProfile.sourceSample)
+        setSavedProfiles(updated.filter(p => !p.id?.startsWith('demo-')))
+        setProfile(pendingProfile.profile)
+        setActiveSample(pendingProfile.sourceSample)
+        setPendingProfile(null)
     }
 
     async function handleGenerate(instruction, snippets = [], wordCount = 150, facts = '') {
@@ -107,13 +116,18 @@ export default function App() {
                     )}
                 </div>
 
-                {/* Voice Fingerprint Display */}
-                {profile && (
+                {/* Pending (just-analyzed) Voice Fingerprint with Save prompt */}
+                {pendingProfile && (
+                    <VoiceFingerprint profile={pendingProfile.profile} onSave={handleSaveVoice} />
+                )}
+
+                {/* Active saved voice fingerprint (read-only, no save) */}
+                {profile && !pendingProfile && (
                     <VoiceFingerprint profile={profile} />
                 )}
 
-                {/* Mode Tabs & Generation Suite */}
-                {profile && (
+                {/* Mode Tabs & Generation Suite — only after a voice is saved */}
+                {profile && !pendingProfile && (
                     <>
                         <div className="mode-tab-bar">
                             <button
